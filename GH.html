@@ -1,0 +1,3748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MH Qadri Export Rugs</title>
+  
+  <!-- मैनिफेस्ट फ़ाइल का लिंक (यह ज़रूरी है) -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- ऐप का थीम कलर -->
+  <meta name="theme-color" content="#2196F3"/>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <style>
+    /* --- Error Message Style --- */
+    #db-error-banner {
+        display: none;
+        background-color: #d32f2f;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        position: fixed;
+        top: 60px; /* Below header */
+        width: 100%;
+        z-index: 1001;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    /* --- General Styles --- */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      padding-top: 60px; /* Adjusted based on fixed header */
+      padding-bottom: 40px; /* Adjusted based on fixed footer */
+      box-sizing: border-box;
+      min-height: 100vh; /* Ensure body takes full height */
+    }
+    header, footer#footer {
+      background-color: #2196F3;
+      color: white;
+      width: 100%;
+      position: fixed;
+      left: 0;
+      z-index: 100;
+      box-sizing: border-box;
+    }
+    header {
+      top: 0;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 60px;
+    }
+    header #logo {
+      max-height: 40px;
+      display: none; /* Initially hidden, shown if logo exists */
+    }
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      text-align: center;
+      flex-grow: 1;
+      cursor: pointer; /* Indicates it's editable */
+    }
+    #sidebar-toggle {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: none; /* Initially hidden, shown when logged in */
+      padding: 0 10px;
+      margin-left: 10px;
+    }
+    /* --- Sidebar & Overlay --- */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      right: -250px; /* Start off-screen */
+      width: 250px;
+      height: 100%;
+      background-color: #333;
+      color: white;
+      transition: right 0.3s ease;
+      z-index: 200;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar.active {
+      right: 0; /* Slide in */
+    }
+    #sidebar button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: left;
+      flex-shrink: 0; /* Prevent buttons from shrinking */
+    }
+    #sidebar button:hover {
+      background-color: #1976D2;
+    }
+    #backup-data-btn {
+      background-color: #FFC107;
+      color: #333;
+    }
+    #backup-data-btn:hover {
+      background-color: #FFA000;
+    }
+    #sidebar .sidebar-spacer {
+      flex-grow: 1; /* Pushes close button to bottom */
+    }
+    #sidebar #close-sidebar-btn {
+      margin-top: auto; /* Stick to the bottom */
+      background-color: #607D8B;
+    }
+    #sidebar #close-sidebar-btn:hover {
+      background-color: #455A64;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none; /* Shown when sidebar is active */
+      z-index: 150;
+    }
+    #overlay.active {
+      display: block;
+    }
+    /* --- Footer --- */
+    footer#footer {
+      bottom: 0;
+      padding: 10px 0;
+      font-size: 14px;
+      display: flex; /* Use flex for centering */
+      justify-content: center;
+      align-items: center;
+      height: 40px;
+      gap: 10px; /* Space if adding more items */
+    }
+    /* --- Login Page Specific Styles --- */
+    #login-page {
+      background-color: #E3F2FD;
+      min-height: 100vh;
+      display: flex; /* Use flex for centering */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding-top: 70px; /* Account for header */
+      padding-bottom: 50px; /* Account for footer */
+      box-sizing: border-box;
+    }
+    #login-page h2 {
+      margin-bottom: 25px;
+      color: #1E88E5;
+      text-align: center;
+      font-size: 24px;
+    }
+    #login-form {
+      background-color: white;
+      padding: 35px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      width: 100%;
+      max-width: 340px; /* Limit form width */
+      box-sizing: border-box;
+    }
+    #login-form .form-group {
+      margin-bottom: 18px;
+    }
+    #login-form label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #444;
+    }
+    #login-form input[type="email"],
+    #login-form input[type="password"] {
+      width: 100%;
+      padding: 14px;
+      margin: 5px 0; /* Adjust margin */
+      border: 1px solid #bdbdbd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    #login-form input[type="email"]:focus,
+    #login-form input[type="password"]:focus {
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+    }
+    #login-form button {
+      width: 100%;
+      padding: 14px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: bold;
+      transition: background-color: 0.3s ease;
+      margin-top: 15px; /* Space before button */
+    }
+    #login-form button:hover {
+      background-color: #1976D2;
+    }
+    #description {
+      max-width: 600px;
+      text-align: left;
+      border: 2px solid #90CAF9;
+      padding: 25px;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    #description p {
+      margin: 0;
+      line-height: 1.7;
+      color: #333;
+    }
+    #login-footer {
+      background-color: #1E88E5; /* Slightly different blue for login footer */
+      color: white;
+      text-align: center;
+      padding: 12px 0;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      font-size: 14px;
+      z-index: 100;
+    }
+    /* Login page layout adjustments */
+    #login-page .login-container {
+      display: flex;
+      flex-direction: column; /* Stack login and description by default */
+      justify-content: center;
+      align-items: center;
+      gap: 35px; /* Space between login box and description box */
+      width: 100%;
+      max-width: 600px; /* Max width for the content, description box will define this */
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #login-page .login-box {
+      width: 100%;
+      max-width: 340px; /* Keep login box width consistent */
+    }
+    #login-page .description-box {
+      width: 100%;
+      max-width: 600px; /* Allow description to be wider */
+    }
+
+    /* Responsive adjustments for login page */
+    @media (min-width: 768px) {
+      #login-page {
+        padding-top: 80px; /* More space on larger screens */
+      }
+      #login-page .login-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+        max-width: 600px;
+      }
+      #login-page .login-box {
+        max-width: 380px;
+      }
+      #login-page .description-box {
+        max-width: 600px;
+      }
+      #login-form {
+        padding: 40px;
+      }
+      #description {
+        padding: 30px;
+      }
+    }
+    /* --- End of Login Page Specific Styles --- */
+    
+    /* --- PDF Options Modal Styles --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      text-align: center;
+      width: 90%;
+      max-width: 350px;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .modal-buttons button {
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      font-weight: bold;
+    }
+    #modal-share-btn { background-color: #FF9800; } /* Orange */
+    #modal-share-btn:hover { background-color: #FB8C00; }
+    #modal-share-btn:disabled { background-color: #9E9E9E; cursor: not-allowed; }
+    #modal-print-btn { background-color: #2196F3; } /* Blue */
+    #modal-print-btn:hover { background-color: #1976D2; }
+    #modal-download-btn { background-color: #4CAF50; } /* Green */
+    #modal-download-btn:hover { background-color: #43A047; }
+    .modal-close {
+      background-color: #f44336; /* Red */
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+     .modal-close:hover {
+      background-color: #d32f2f;
+    }
+
+
+    /* --- Profile Buttons Container --- */
+    #profile-buttons-container {
+      width: 100%;
+      background-color: #424242; /* Dark grey background */
+      padding: 10px 5px;
+      position: fixed;
+      top: 60px; /* Below header */
+      left: 0;
+      display: none; /* Hidden initially, shown when logged in */
+      flex-direction: column; /* Stack action buttons and profile buttons */
+      gap: 10px;
+      align-items: center;
+      z-index: 99; /* Below header but above content */
+      box-sizing: border-box;
+    }
+    #profile-action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 10px; /* Space below action buttons */
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+    .fixed-btn { /* Style for Add Company/Contractor buttons */
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    .fixed-btn:disabled {
+        background-color: #9E9E9E;
+        cursor: not-allowed;
+    }
+    #company-fixed-btn { background-color: #4CAF50; } /* Green */
+    #company-fixed-btn:hover { background-color: #43A047; }
+    #contractor-fixed-btn { background-color: #FF9800; } /* Orange */
+    #contractor-fixed-btn:hover { background-color: #FB8C00; }
+
+    #company-profile-buttons,
+    #contractor-buttons-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 5px;
+      padding: 0 10px; /* Padding for the container */
+      box-sizing: border-box;
+    }
+    #company-profile-buttons button,
+    #contractor-buttons-container button { /* Style for individual profile buttons */
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color: 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow transition */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #company-profile-buttons button { background-color: #9C27B0; } /* Purple */
+    #contractor-buttons-container button { background-color: #FF5722; } /* Deep Orange */
+
+    #company-profile-buttons button:hover,
+    #contractor-buttons-container button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+     #company-profile-buttons button:hover { background-color: #7B1FA2; }
+     #contractor-buttons-container button:hover { background-color: #E64A19; }
+
+    #company-profile-buttons button.selected,
+    #contractor-buttons-container button.selected {
+        background-color: #FFEB3B; /* Yellow highlight */
+        color: #333; /* Dark text for yellow background */
+        font-weight: bold;
+        transform: translateY(0); /* No lift on selected */
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Subtle shadow */
+    }
+
+    /* --- Main Content Area --- */
+    main {
+      padding: 20px;
+      max-width: 100%; /* Allow full width */
+      overflow-x: hidden; /* Prevent horizontal scroll on main */
+      margin-top: 140px; /* Default margin, adjusted by JS */
+      box-sizing: border-box;
+    }
+    section {
+      display: none; /* All sections hidden initially */
+      margin-bottom: 30px;
+      background-color: #BBDEFB; /* Light blue background for sections */
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    section h2 {
+      margin-top: 0;
+      color: #1976D2; /* Darker blue for headings */
+      border-bottom: 2px solid #1976D2;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    /* Specific section styles */
+    #change-password-section {
+      background-color: #ffcdd2; /* Light red */
+      border: 1px solid #e57373;
+    }
+    #change-password-section h2 {
+      color: #d32f2f; /* Dark red */
+      border-bottom-color: #d32f2f;
+    }
+
+    /* --- Tables --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      min-width: 600px; /* Minimum width for horizontal scroll */
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    table, th, td {
+      border: 1px solid #ddd; /* Light grey border */
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 14px;
+      word-wrap: break-word; /* Wrap long text */
+      vertical-align: middle; /* Align content vertically */
+    }
+    th {
+      background-color: #2196F3; /* Header background */
+      color: white;
+      font-weight: bold;
+      position: sticky; /* Make header sticky within container */
+      top: 0; /* Stick to top of scrolling container */
+      z-index: 10; /* Above table body */
+    }
+    tbody tr:hover {
+      background-color: #f5f5f5; /* Row hover effect */
+    }
+    tfoot tr {
+        font-weight: bold;
+        background-color: #e3f2fd;
+    }
+    tfoot td {
+        color: #0d47a1;
+    }
+    .table-container {
+      overflow-x: auto; /* Enable horizontal scroll for the table */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      margin-bottom: 20px;
+      border: 1px solid #ddd; /* Border around the scrolling area */
+      border-radius: 4px;
+    }
+
+    /* --- Forms --- */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    input[type="password"],
+    input[type="email"],
+    select,
+    textarea { /* Added textarea */
+      width: 100%;
+      padding: 10px 12px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px; /* Larger font for inputs */
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      font-family: Arial, sans-serif; /* Ensure textarea inherits font */
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="number"]:focus,
+    input[type="password"]:focus,
+    input[type="email"]:focus,
+    select:focus,
+    textarea:focus { /* Added textarea */
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    }
+    input[name="date"] { /* Specific style for date inputs if needed */
+      border-color: #2196F3;
+    }
+    input[readonly], input.readonly-display {
+      background-color: #e0e0e0; /* Grey out readonly fields */
+      cursor: not-allowed;
+      border-color: #ccc;
+      box-shadow: none;
+    }
+    /* Display Info Box Style */
+    .display-info {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #e0f2f7; /* Light cyan background */
+      border-left: 4px solid #0288d1; /* Blue left border */
+      border-radius: 4px;
+    }
+    .display-info p {
+      margin: 5px 0;
+      font-size: 15px;
+      color: #333;
+      display: flex;
+      align-items: center;
+    }
+    .display-info p span { /* Style for the value part */
+      font-weight: bold;
+      color: #01579B; /* Darker blue */
+      margin-left: 5px;
+    }
+
+    /* --- Buttons --- */
+    button { /* General button style */
+      background-color: #2196F3;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px; /* Spacing around buttons */
+      transition: background-color: 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      vertical-align: middle; /* Align buttons nicely if inline */
+    }
+    button:hover {
+      background-color: #1976D2;
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+    button:active {
+      transform: translateY(0px); /* Press effect */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:disabled {
+        background-color: #BDBDBD;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    button[type="button"] { /* Default style for Cancel/Back buttons */
+      background-color: #f44336; /* Red */
+    }
+    button[type="button"]:hover {
+      background-color: #d32f2f;
+    }
+     button[type="button"]:disabled:hover {
+        background-color: #BDBDBD; /* Override hover for disabled cancel button */
+    }
+    .auto-fill-btn {
+        margin-left: 10px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: bold;
+        background-color: #607D8B; /* Grey */
+        border-radius: 10px;
+        cursor: pointer;
+        border: none;
+        color: white;
+        vertical-align: middle;
+    }
+    .auto-fill-btn:hover {
+        background-color: #455A64;
+    }
+    /* Vertical form layout */
+    .vertical-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Space between form groups */
+    }
+    /* Button Group Styles */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap; /* Wrap buttons on smaller screens */
+    }
+    .btn-group.no-print button { /* Specific styles for buttons in print-hidden groups */
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    /* Specific Button Colors */
+    .add-entry-btn { background-color: #4CAF50; }
+    .add-entry-btn:hover { background-color: #43A047; }
+    .add-return-btn { background-color: #F44336; }
+    .add-return-btn:hover { background-color: #D32F2F; }
+    .pay-amount-btn { background-color: #2196F3; }
+    .pay-amount-btn:hover { background-color: #1976D2; }
+    .view-payment-details-btn { background-color: #9C27B0; }
+    .view-payment-details-btn:hover { background-color: #7B1FA2; }
+    .pdf-download-btn { background-color: #607D8B; }
+    .pdf-download-btn:hover { background-color: #455A64; }
+    .pay-commission-btn { background-color: #FF9800; } /* Orange for commission */
+    .pay-commission-btn:hover { background-color: #FB8C00; }
+
+    /* --- Profile Info Display --- */
+    .profile-info {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      font-size: 14px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      text-align: center;
+      padding: 10px;
+      background-color: #e3f2fd; /* Light blue background */
+      border-radius: 4px;
+    }
+    .profile-info span { /* Label part */
+      font-weight: normal;
+      color: #555;
+    }
+    .profile-info span span { /* Value part */
+      font-weight: bold;
+      color: #333;
+      margin-left: 5px;
+    }
+
+    /* --- Orders Container Styling --- */
+    .orders-container {
+      margin-bottom: 40px;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc; /* Default border */
+    }
+    #company-orders-container { background-color: #E3F2FD; border-color: #90CAF9; }
+    #contractor-orders-container { background-color: #E8F5E9; border-color: #A5D6A7; }
+
+    #company-order-header,
+    #contractor-order-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+    #company-order-header h2, /* Main title within order section (e.g., Company View) */
+    #contractor-order-header h2#contractor-title { /* Main title within order section (e.g., Contractor View) */
+      margin: 0 0 5px 0;
+      font-size: 24px;
+      color: #1E88E5;
+      cursor: pointer; /* For editing */
+    }
+
+    #company-order-header h3.contractor-subtitle-display, /* Company View's "Mirzapur" subtitle */
+    #contractor-order-header h3#contractor-subtitle { /* Contractor View's "Mirzapur" subtitle */
+      margin: 5px 0 15px 0;
+      font-size: 18px;
+      color: #555;
+      font-weight: normal;
+      cursor: pointer; /* For editing */
+    }
+    /* Specific style for subtitle in company view */
+    #company-order-header h3.contractor-subtitle-display {
+      color: #1b5e20; /* Green color */
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    /* Sub-headers within sections (like "Order Issue", "Carpet Bajar Report") */
+    #order-output-section h3:not(.contractor-subtitle-display):not(#contractor-subtitle) { /* Target specific H3s */
+      font-size: 16px;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      color: #444;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 5px;
+    }
+    /* Target the "Company Orders" / "Contractor Orders" subtitles */
+    #company-order-header h3:not(.contractor-subtitle-display),
+    #contractor-order-header h3:not(#contractor-subtitle) {
+        margin: 15px 0 10px 0;
+        font-size: 20px; /* Make it a bit more prominent */
+        color: #333;
+        font-weight: bold;
+    }
+
+
+    /* --- Stock Issue Tables Styling --- */
+    .stock-issue-container {
+      display: flex;
+      flex-direction: row; /* Side by side for all screens */
+      justify-content: flex-start; /* Align items to the start for scrolling */
+      gap: 10px;
+      margin-top: 20px;
+      overflow-x: auto; /* Enable horizontal scroll for all screens */
+      -webkit-overflow-scrolling: touch;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      /* white-space: nowrap; /* Could be added if flex-shrink fails on some browsers */
+    }
+    .stock-issue-container > div { /* Each box (Received, Deliver, Balance) */
+      border: 1px solid #ddd;
+      padding: 10px;
+      background: #fff;
+      border-radius: 4px;
+      min-width: 200px; /* Minimum width for each box, consistent across screens */
+      flex-shrink: 0; /* Prevent shrinking, enables horizontal scroll */
+      text-align: center;
+      vertical-align: top;
+    }
+    /* Specific tables within stock container */
+    #company-received-table, #company-deliver-table, #company-balance-table,
+    #contractor-received-table, #contractor-deliver-table, #contractor-balance-table {
+      width: auto; /* Auto width based on content */
+      min-width: 150px; /* Minimum width */
+      font-size: 11px; /* Smaller font */
+      border-collapse: collapse;
+      margin: 0 auto; /* Center table within its div */
+    }
+    /* Cells within stock tables */
+    #company-received-table th, #company-received-table td,
+    #company-deliver-table th, #company-deliver-table td,
+    #company-balance-table th, #company-balance-table td,
+    #contractor-received-table th, #contractor-received-table td,
+    #contractor-deliver-table th, #contractor-deliver-table td,
+    #contractor-balance-table th, #contractor-balance-table td {
+      padding: 5px;
+      border: 1px solid #ddd;
+      white-space: nowrap; /* Prevent text wrapping */
+      text-align: right; /* Right-align numbers */
+    }
+    /* First column (Size label) left-aligned */
+    #company-received-table td:first-child, #company-deliver-table td:first-child,
+    #company-balance-table td:first-child, #contractor-received-table td:first-child,
+    #contractor-deliver-table td:first-child, #contractor-balance-table td:first-child,
+    #company-received-table th:first-child, #company-deliver-table th:first-child,
+    #company-balance-table th:first-child, #contractor-received-table th:first-child,
+    #contractor-deliver-table th:first-child, #contractor-balance-table th:first-child {
+      text-align: left;
+    }
+    /* Header cells in stock tables */
+    #company-received-table th, #company-deliver-table th, #company-balance-table th,
+    #contractor-received-table th, #contractor-deliver-table th, #contractor-balance-table th {
+      background-color: #64B5F6; /* Lighter blue */
+      color: white;
+      font-weight: bold;
+      text-align: center; /* Center header text */
+    }
+    /* Footer cells in stock tables */
+    #company-received-table tfoot td, #company-deliver-table tfoot td,
+    #company-balance-table tfoot td, #contractor-received-table tfoot td,
+    #contractor-deliver-table tfoot td, #contractor-balance-table tfoot td {
+      font-weight: bold;
+      background-color: #f0f0f0; /* Light grey footer */
+    }
+    /* Footer first cell (label like "Total Peace") right-aligned */
+    #company-received-table tfoot td:first-child, #company-deliver-table tfoot td:first-child,
+    #company-balance-table tfoot td:first-child, #contractor-received-table tfoot td:first-child,
+    #contractor-deliver-table tfoot td:first-child, #contractor-balance-table tfoot td:first-child {
+      text-align: right;
+    }
+    .stock-issue-container > div > h4 {
+      font-size: 13px;
+      margin: 0 0 10px 0;
+      text-align: center;
+      white-space: nowrap;
+      color: #1E88E5;
+    }
+
+    /* --- Payment Detail Section Styling --- */
+    #payment-detail-section {
+      background-color: #FFF9C4; /* Light yellow */
+      border: 1px solid #FFF59D;
+    }
+    #payment-detail-section h2 { /* Main title (MH Qadri...) */
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: #1E88E5;
+      border-bottom: 2px solid #1E88E5;
+      padding-bottom: 10px;
+      cursor: pointer; /* Editable */
+    }
+    #payment-detail-section h3:not(.payment-report-header) { /* Sub-header "Payment Details for ..." */
+      text-align: center;
+      font-size: 20px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #FBC02D;
+      padding-bottom: 5px;
+    }
+    .payment-report-header {
+      text-align: left;
+      font-size: 18px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      color: #795548; /* Brown color */
+      border-bottom: 1px dashed #795548;
+      padding-bottom: 5px;
+    }
+
+    .payment-report-block {
+      text-align: left;
+      font-size: 14px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+    .payment-report-block p {
+      margin: 8px 0;
+      line-height: 1.6;
+      color: #444;
+    }
+    .payment-report-block p span {
+      font-weight: bold;
+      margin-left: 5px;
+      color: #000;
+    }
+    #payment-history {
+      padding: 0;
+      border: none;
+      background: none;
+      margin-bottom: 20px;
+    }
+    #payment-history-table {
+      min-width: 100%;
+      margin-top: 10px;
+    }
+    #payment-history-table thead {
+      background-color: #A1887F; /* Brown header */
+      color: white;
+    }
+    #payment-history-table tfoot td {
+        color: #3e2723;
+    }
+
+
+    /* --- Pay Amount Section Styling --- */
+    #pay-amount-section {
+      background-color: #C8E6C9; /* Light green */
+      border: 1px solid #A5D6A7;
+    }
+    #pay-amount-section h2 {
+      color: #388E3C; /* Dark green */
+      border-bottom-color: #388E3C;
+    }
+    #pay-amount-summary {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    #pay-amount-summary p {
+      margin: 8px 0;
+      color: #333;
+    }
+    #pay-amount-summary p span {
+      font-weight: bold;
+      color: #1b5e20;
+      margin-left: 5px;
+    }
+
+    /* --- Row Editing --- */
+    tr.editing td {
+      padding: 2px;
+      background-color: #fffde7;
+    }
+    tr.editing input[type="text"],
+    tr.editing input[type="number"],
+    tr.editing input[type="date"],
+    tr.editing select,
+    tr.editing textarea { /* Added textarea */
+      padding: 6px 8px;
+      font-size: 13px;
+      margin: 0;
+      border-radius: 2px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      width: 100%;
+      font-family: Arial, sans-serif; /* Ensure consistency */
+    }
+     tr.editing input:focus, tr.editing select:focus, tr.editing textarea:focus { /* Added textarea */
+         border-color: #2196F3;
+         outline: none;
+     }
+    tr.editing button {
+      padding: 4px 8px;
+      font-size: 12px;
+      margin: 1px;
+    }
+     .save-btn { background-color: #4CAF50; }
+     .save-btn:hover { background-color: #43A047; }
+     .cancel-btn { background-color: #f44336; }
+     .cancel-btn:hover { background-color: #d32f2f; }
+     .edit-btn { background-color: #FFC107; color: #333; }
+     .edit-btn:hover { background-color: #FFA000; }
+     .delete-btn { background-color: #F44336; }
+     .delete-btn:hover { background-color: #D32F2F; }
+
+    /* --- Print styles --- */
+    @media print {
+      body {
+        padding-top: 0;
+        padding-bottom: 0;
+        background-color: #fff !important;
+        color: #000 !important;
+        font-size: 10pt;
+      }
+      header, footer#footer, #sidebar, #overlay, #profile-buttons-container, #login-page, .no-print, #login-footer,
+      #company-profile-section, #contractor-profile-section, #order-entry-section, #pay-amount-section, #change-password-section,
+      #pdf-options-modal, #db-error-banner /* Hide modal and error on print */
+       {
+        display: none !important;
+      }
+      main {
+        margin-top: 0 !important;
+        padding: 5px;
+      }
+      section, .orders-container, #payment-detail-section {
+        box-shadow: none !important;
+        border: none !important;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #fff !important;
+        display: block !important;
+        page-break-inside: avoid;
+      }
+      /* A specific class to show only the desired content for printing */
+      .print-only-content {
+        display: block !important;
+      }
+      body > *:not(.print-only-content) {
+        display: none;
+      }
+      table {
+        min-width: 100%;
+        box-shadow: none;
+        border: 1px solid #000 !important;
+        font-size: 9pt;
+        table-layout: auto;
+        width: 100%;
+        page-break-inside: auto;
+      }
+      th, td {
+        padding: 4px;
+        font-size: 8pt;
+        border: 1px solid #ccc !important;
+        word-wrap: break-word;
+        overflow: visible;
+      }
+      th {
+        background-color: #eee !important;
+        color: #000 !important;
+        font-weight: bold;
+      }
+      tbody tr {
+         page-break-inside: avoid;
+      }
+      tfoot {
+          display: table-footer-group; /* Ensure footer prints */
+      }
+      .print-hidden {
+        display: none !important;
+      }
+      th.print-hidden, td.print-hidden {
+        display: none !important;
+      }
+      .stock-issue-container {
+        page-break-inside: avoid;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin-top: 15px;
+      }
+      .stock-issue-container > div {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin: 5px;
+        min-width: 160px;
+      }
+      .stock-issue-container > div > h4 { font-size: 10pt; margin: 0 0 5px 0; }
+      .stock-issue-container table { width: 100%; min-width: auto; font-size: 8pt; margin: 0; border: none !important; }
+      .stock-issue-container th, .stock-issue-container td { padding: 2px; font-size: 7pt; border: 1px solid #eee !important; }
+      .address-details { font-size: 8pt; margin-top: 15px; white-space: pre-line !important; }
+      #payment-detail-section h2,
+      #payment-detail-section h3:not(.payment-report-header),
+      #payment-detail-section p, #payment-detail-section span {
+        font-size: 10pt !important;
+      }
+      .payment-report-header {
+         font-size: 11pt !important;
+      }
+      #payment-history-table { font-size: 9pt; }
+      #payment-history-table th, #payment-history-table td { padding: 3px; font-size: 8pt; }
+      a { text-decoration: none; color: #000 !important; }
+      .profile-info {
+        font-size: 10pt;
+        background-color: #fff !important;
+        display: flex !important;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding: 5px;
+        border: 1px solid #eee;
+      }
+      .profile-info span, .profile-info span span { font-size: 9pt !important; }
+      #company-order-header h2, #contractor-order-header h2#contractor-title { font-size: 16pt; margin-bottom: 5px; }
+      #company-order-header h3, #contractor-order-header h3#contractor-subtitle { font-size: 12pt; margin-top: 5px; margin-bottom: 15px; }
+      #payment-detail-section { page-break-before: always; }
+      .payment-report-block { margin-bottom: 15px; padding: 10px; border: 1px solid #eee; }
+      .payment-report-block p { margin: 5px 0; font-size: 10pt; }
+      #payment-history { margin-bottom: 15px; }
+    }
+
+    /* --- Responsive adjustments (General) --- */
+    @media (max-width: 768px) {
+      body { padding-top: 60px; padding-bottom: 40px; }
+      header h1 { font-size: 16px; }
+      #sidebar-toggle { font-size: 20px; padding: 0 5px; }
+      main { padding: 10px; margin-top: 120px; }
+      section { padding: 15px; }
+      .profile-info { font-size: 12px; gap: 10px; }
+      th, td { padding: 8px; font-size: 12px; }
+      button { padding: 8px 15px; font-size: 14px; }
+      .btn-group.no-print button { padding: 6px 12px; font-size: 12px; }
+      .fixed-btn { padding: 6px 10px; font-size: 12px; }
+      #company-profile-buttons button, #contractor-buttons-container button { padding: 5px 10px; font-size: 11px; }
+      
+      .stock-issue-container > div {
+        min-width: 180px;
+      }
+      .stock-issue-container > div > h4 { font-size: 12px; }
+      .stock-issue-container table { min-width: auto; }
+      .stock-issue-container th, .stock-issue-container td { padding: 4px; font-size: 10px; }
+
+      .address-details { font-size: 9px; }
+      #payment-detail-section h2 { font-size: 18px; }
+      #payment-detail-section h3 { font-size: 14px; }
+      #payment-detail-section p { font-size: 12px; }
+      #payment-history-table th, #payment-history-table td { font-size: 11px; padding: 5px; }
+      #pay-amount-section h2 { font-size: 16px; }
+      #pay-amount-section input, #pay-amount-section select { font-size: 14px; }
+      #pay-amount-section button { font-size: 14px; padding: 8px 16px; }
+      .display-info p { font-size: 14px; }
+      table { min-width: 400px; }
+    }
+    /* Utility Classes */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <img id="logo" src="https://raw.githubusercontent.com/aatekaansari/Mhcarpat/main/logo.png" alt="Logo">
+    <h1 id="main-header-title" ondblclick="editTitle(this, 'main_header_title')">MH Qadri Export Rugs</h1>
+    <button id="sidebar-toggle">☰</button>
+  </header>
+  
+  <div id="db-error-banner">
+    <strong>Error:</strong> Could not initialize local database. Offline mode is disabled. Please try using a normal browser window (not private/incognito) and ensure you are not opening the file directly.
+  </div>
+
+
+  <div id="sidebar">
+    <button onclick="setLogoFromUrl()">Set Logo URL</button>
+    <button onclick="triggerElementEdit('main-header-title', 'main_header_title')">Edit App Main Title</button>
+    <button onclick="triggerElementEditFirstOfClass('.js-app-address-display', 'app_address_details_text')">Edit Address/Proprietor</button>
+    <button id="change-password-btn">Change Password</button>
+    <button id="logout-btn">Logout</button>
+    <button id="backup-data-btn" onclick="backupData()">Backup Data</button>
+    <button onclick="document.getElementById('restore-file').click()">Restore Data</button>
+    <input type="file" id="restore-file" accept=".json" style="display: none;" onchange="restoreBackup(this)">
+    <div class="sidebar-spacer"></div>
+    <button id="close-sidebar-btn" onclick="closeSidebar()">Back</button>
+  </div>
+
+  <div id="overlay" onclick="closeSidebar()"></div>
+
+  <div id="login-page" style="display: flex;">
+    <div class="login-container">
+      <div class="login-box">
+        <h2>Login</h2>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="user-email">User Email</label>
+            <input type="email" id="user-email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
+          </div>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+      <div class="description-box">
+        <div id="description">
+          <p>MH Kadari Export Rags is a leading manufacturer and exporter of high-quality carpets, Dari, and handmade Turkish knot carpets. We offer premium designs, vibrant color combinations, and various sizes to suit any space. With a commitment to quality and craftsmanship, we provide durable, elegant, and competitively priced flooring solutions. Choose us for style, quality, and excellence!</p>
+        </div>
+      </div>
+    </div>
+    <footer id="login-footer">
+      <p>MH Qadri Export Rugs © 2023</p>
+    </footer>
+  </div>
+
+  <div id="profile-buttons-container" style="display: none;">
+    <div id="profile-action-buttons">
+      <button id="company-fixed-btn" class="fixed-btn" onclick="showCompanyProfileSection()">Add Company</button>
+      <button id="contractor-fixed-btn" class="fixed-btn" onclick="showContractorProfileSection()">Add Contractor</button>
+    </div>
+    <div id="company-profile-buttons"></div>
+    <div id="contractor-buttons-container"></div>
+  </div>
+
+  <main id="main-content" style="display: none;">
+    <!-- Change Password Section -->
+    <section id="change-password-section">
+      <h2>Change Password</h2>
+      <form id="change-password-form" class="vertical-form">
+        <div class="form-group">
+          <label for="current-password">Current Password</label>
+          <input type="password" id="current-password" required>
+        </div>
+        <div class="form-group">
+          <label for="new-password">New Password</label>
+          <input type="password" id="new-password" required minlength="6">
+        </div>
+        <div class="btn-group">
+          <button type="submit">Change Password</button>
+          <button type="button" onclick="cancelChangePassword()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Company Profile Section -->
+    <section id="company-profile-section">
+      <h2>Company Profile</h2>
+      <form id="company-profile-form" class="vertical-form">
+        <div class="form-group">
+          <label for="company-name-input">Name*</label>
+          <input type="text" id="company-name-input" required>
+        </div>
+        <div class="form-group">
+          <label for="company-mobile-input">Mobile</label>
+          <input type="text" id="company-mobile-input">
+        </div>
+        <div class="form-group">
+          <label for="company-address-input">Address</label>
+          <input type="text" id="company-address-input">
+        </div>
+        <div class="btn-group">
+          <button type="button" onclick="saveCompanyProfile()">Save Company Profile</button>
+          <button type="button" onclick="hideAllSectionsAndShowOutput()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Contractor Profile Section -->
+    <section id="contractor-profile-section">
+      <h2>Contractor Profile</h2>
+      <form id="contractor-profile-form" class="vertical-form">
+        <div class="form-group">
+          <label for="contractor-name-input">Name*</label>
+          <input type="text" id="contractor-name-input" required>
+        </div>
+        <div class="form-group">
+          <label for="contractor-mobile-input">Mobile</label>
+          <input type="text" id="contractor-mobile-input">
+        </div>
+        <div class="form-group">
+          <label for="contractor-address-input">Address</label>
+          <input type="text" id="contractor-address-input">
+        </div>
+        <div class="btn-group">
+          <button type="button" onclick="saveContractorProfile()">Save Contractor Profile</button>
+          <button type="button" onclick="hideAllSectionsAndShowOutput()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Order Entry Section -->
+    <section id="order-entry-section">
+      <h2><span id="current-order-type-label"></span> Entry Form</h2>
+      <form id="order-entry-form" class="vertical-form">
+        <input type="hidden" id="is-return-input" name="isReturn" value="false">
+        <div class="form-group" id="company-select-group" style="display: none;">
+          <label id="company-select-label" for="company-select-input">Select Company*</label>
+          <select id="company-select-input" name="company-select" required></select>
+        </div>
+        <div class="form-group">
+          <label id="date-label" for="order-date-input">Date*</label>
+          <input type="date" id="order-date-input" name="date" required>
+        </div>
+        <div class="form-group">
+          <label id="size-label" for="order-size-input">Size (e.g., 9×12)*</label>
+          <input type="text" id="order-size-input" name="size" required pattern="^[\d.\s]+([×x*])[\d.\s]+$" title="Use format W×H e.g., 9×12 or 2.6×9">
+        </div>
+        <div class="form-group">
+          <label id="peace-label" for="order-peace-input">Peace</label>
+          <input type="number" id="order-peace-input" name="peace" step="any">
+        </div>
+        <div class="form-group">
+          <label id="kati-label" for="order-kati-input">Kati</label>
+          <input type="number" id="order-kati-input" name="kati" step="any">
+        </div>
+        <div class="form-group" id="tana-group">
+          <label id="tana-label" for="order-tana-input">Tana</label>
+          <input type="number" id="order-tana-input" name="tana" step="any">
+        </div>
+        <div class="form-group" id="material-jana-group" style="display: none;">
+          <label id="material-jana-label" for="order-material-jana-input">Material Jana</label>
+          <input type="number" id="order-material-jana-input" name="material-jana" step="any">
+        </div>
+        <div class="form-group">
+          <label id="rate-label" for="order-rate-input">Rate</label>
+          <input type="number" id="order-rate-input" name="rate" step="any">
+        </div>
+        <div class="form-group">
+          <label for="order-cmsn-rate-input">Cmsn Rate</label>
+          <input type="number" id="order-cmsn-rate-input" name="cmsnRate" step="any" placeholder="e.g. 2, 5.5">
+        </div>
+        <div class="form-group" id="description-group">
+          <label id="description-label" for="order-description-input">Description</label>
+          <input type="text" id="order-description-input" name="description">
+        </div>
+        <div id="additional-fields"></div>
+        <div class="btn-group">
+          <button type="submit">Submit Entry</button>
+          <button type="button" onclick="cancelToOrders()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Order Output Section (Container for Company/Contractor Views) -->
+    <section id="order-output-section" style="display: block;">
+      <!-- Company Orders View -->
+      <div id="company-orders-container" class="orders-container hidden">
+        <div id="company-order-header">
+          <h2 id="company-main-title" ondblclick="editTitle(this, 'company_order_header_title')">MH Qadri Export Rugs</h2>
+          <h3 id="contractor-subtitle-company" class="contractor-subtitle-display" ondblclick="editTitle(this, 'company_view_subtitle')">Mirzapur</h3>
+          <div class="profile-info" id="company-profile-info"></div>
+          <h3>Company Orders</h3>
+          <div class="btn-group no-print">
+            <button class="add-entry-btn" onclick="showAddOrderSection('company', false)">Order Entry</button>
+            <button class="add-return-btn" onclick="showAddOrderSection('company', true)">Carpet Bajar</button>
+            <button class="pay-amount-btn" onclick="showPayAmountSection('company')">Pay Amount</button>
+            <button class="view-payment-details-btn" onclick="showPaymentDetailSection('company')">View Payment Details</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('company', false))">Order PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('company', true))">Bajar PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => prepareAllReportPdfContent('company'))">All Report</button>
+          </div>
+        </div>
+        <h3>Order Issue</h3>
+        <div class="table-container">
+          <table id="company-order-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+        </div>
+        <div id="company-return-section" style="display: none;">
+          <h3>Carpet Bajar Report</h3>
+          <div class="table-container">
+            <table id="company-return-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+          </div>
+        </div>
+        <div class="stock-issue-container">
+          <div>
+            <h4>Received Order</h4>
+            <table id="company-received-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-received-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-received-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="company-received-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-received-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="company-received-cmsn">₹ 0</td></tr>
+                <tr><td>Binai Amount</td><td id="company-received-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="company-received-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Order Deliver</h4>
+            <table id="company-deliver-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-deliver-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-deliver-peace">0</td></tr>
+                <tr><td>Carpet Weight</td><td id="company-deliver-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-deliver-finalgaj">0.00</td></tr>
+                <tr><td>Outstanding Commission</td><td id="company-deliver-cmsn">₹ 0</td></tr>
+                <tr><td>Outstanding Binai</td><td id="company-deliver-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Balance Order</h4>
+            <table id="company-balance-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-balance-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-balance-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="company-balance-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-balance-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="company-balance-cmsn">₹ 0</td></tr>
+                <tr><td>Binai Amount</td><td id="company-balance-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="company-balance-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+          Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+        </div>
+      </div>
+
+      <!-- Contractor Orders View -->
+      <div id="contractor-orders-container" class="orders-container hidden">
+        <div id="contractor-order-header">
+          <h2 id="contractor-title" ondblclick="editTitle(this, 'contractor_order_header_title')">MH Qadri Export Rugs</h2>
+          <h3 id="contractor-subtitle" ondblclick="editTitle(this, 'contractor_view_subtitle')">Mirzapur</h3>
+          <div class="profile-info" id="contractor-profile-info"></div>
+          <h3>Contractor Orders</h3>
+          <div class="btn-group no-print">
+            <button class="add-entry-btn" onclick="showAddOrderSection('contractor', false)">Order Entry</button>
+            <button class="add-return-btn" onclick="showAddOrderSection('contractor', true)">Carpet Bajar</button>
+            <button class="pay-amount-btn" onclick="showPayAmountSection('contractor')">Pay Amount</button>
+            <button class="view-payment-details-btn" onclick="showPaymentDetailSection('contractor')">View Payment Details</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('contractor', false))">Order PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('contractor', true))">Bajar PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => prepareAllReportPdfContent('contractor'))">All Report</button>
+          </div>
+        </div>
+        <h3>Order Issue</h3>
+        <div class="table-container">
+          <table id="contractor-order-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+        </div>
+        <div id="contractor-return-section" style="display: none;">
+          <h3>Carpet Bajar Report</h3>
+          <div class="table-container">
+            <table id="contractor-return-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+          </div>
+        </div>
+        <div class="stock-issue-container">
+          <div>
+            <h4>Received Order</h4>
+            <table id="contractor-received-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-received-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-received-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="contractor-received-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-received-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="contractor-received-cmsn">₹ 0</td></tr>
+                <tr><td>Binai Amount</td><td id="contractor-received-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="contractor-received-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Order Deliver</h4>
+            <table id="contractor-deliver-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-deliver-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-deliver-peace">0</td></tr>
+                <tr><td>Carpet Weight</td><td id="contractor-deliver-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-deliver-finalgaj">0.00</td></tr>
+                <tr><td>Outstanding Commission</td><td id="contractor-deliver-cmsn">₹ 0</td></tr>
+                <tr><td>Outstanding Binai</td><td id="contractor-deliver-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Balance Order</h4>
+            <table id="contractor-balance-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-balance-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-balance-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="contractor-balance-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-balance-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="contractor-balance-cmsn">₹ 0</td></tr>
+                <tr><td>Binai Amount</td><td id="contractor-balance-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="contractor-balance-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+          Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+        </div>
+      </div>
+    </section>
+
+    <!-- Pay Amount Section -->
+    <section id="pay-amount-section">
+        <h2>Pay Amount to <span id="pay-to-name"></span></h2>
+        <div id="pay-amount-summary" class="display-info">
+            <p>
+              <b>Total Outstanding Commission (Deliveries):</b> 
+              <span id="pay-total-outstanding-commission">₹ 0</span>
+              <button type="button" class="auto-fill-btn" id="fill-commission-btn" title="Fill full commission amount">Pay Full</button>
+            </p>
+            <p>
+              <b>Total Net Outstanding Binai Amount (Deliveries):</b> 
+              <span id="pay-remaining-binai">₹ 0</span>
+              <button type="button" class="auto-fill-btn" id="fill-binai-btn" title="Fill full binai amount">Pay Full</button>
+            </p>
+        </div>
+        <form id="pay-amount-form" class="vertical-form">
+            <div class="form-group">
+                <label for="pay-date-input">Date*</label>
+                <input type="date" id="pay-date-input" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="pay-mode-select">Payment Mode*</label>
+                <select id="pay-mode-select" name="payment-mode" required>
+                    <option value="">Select Payment Mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="upi">UPI</option>
+                    <option value="bank-transfer">Bank Transfer</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pay-binai-amount-input">Binai Amount (₹)</label>
+                <input type="number" id="pay-binai-amount-input" name="binai-amount" step="any" min="0" placeholder="Enter binai amount to pay">
+            </div>
+            <div class="form-group">
+                <label for="pay-commission-amount-input">Commission Amount (₹)</label>
+                <input type="number" id="pay-commission-amount-input" name="commission-amount" step="any" min="0" placeholder="Enter commission amount to pay">
+            </div>
+            <div class="btn-group">
+                <button type="button" onclick="handleBinaiPaymentSubmit(event)">Pay Binai Only</button>
+                <button type="button" class="pay-commission-btn" onclick="handleCommissionPaymentSubmit(event)">Pay Commission Only</button>
+                <button type="button" onclick="cancelToOrders()">Cancel</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Payment Detail Section -->
+    <section id="payment-detail-section">
+      <h2 id="payment-detail-main-title" ondblclick="editTitle(this, 'payment_detail_header_title')">MH Qadri Export Rugs</h2>
+      <h3>Payment Details for <span id="payment-detail-name"></span></h3>
+
+      <!-- Received Order Payment Report -->
+      <div class="payment-report-block">
+        <h3 class="payment-report-header">Received Order Payment Report</h3>
+        <p>Binai Rate: <span id="received-avg-rate">0.00</span></p>
+        <p>Commission Rate: <span id="received-avg-commission-rate">0.00</span></p>
+        <p>Received Order Final Gaj: <span id="total-received-finalgaj">0.00</span></p>
+        <p>Received Order total Binai Amount: <span id="total-received-binai-gross">₹ 0</span></p>
+        <p>Total Commission (on Received Orders): <span id="total-commission-on-received">₹ 0</span></p>
+        <p><b>Commission- minus Binai Amount: <span id="total-received-binai-net">₹ 0</span></b></p>
+      </div>
+
+      <!-- Carpet Bajar Binai Amount Report -->
+      <div class="payment-report-block">
+        <h3 class="payment-report-header">Carpet Bajar Binai Amount Report</h3>
+        <p>Deliver Order Binai Rate: <span id="deliver-avg-rate">0.00</span></p>
+        <p>Deliver Order Final Gaj: <span id="total-deliver-finalgaj">0.00</span></p>
+        <p>Deliver Order Binai Amount (Gross): <span id="total-deliver-binai-gross">₹ 0</span></p>
+        <p><b>Deliver Order Binai Amount (Net): <span id="bajar-outstanding-net-binai">₹ 0</span></b></p>
+        <p><b>Deliver Orders Commission amount: <span id="bajar-outstanding-commission">₹ 0</span></b></p>
+      </div>
+      
+      <!-- Order stock -->
+      <div class="payment-report-block">
+        <h3 class="payment-report-header">Order stock</h3>
+        <p>Balance Order Final Gaj: <span id="total-balance-finalgaj">0.00</span></p>
+        <p>Balance order commission amount: <span id="total-balance-commission">₹ 0</span></p>
+        <p>Balance Order Binai Amount (Net): <span id="total-balance-binai">₹ 0</span></p>
+        <p><b>Balance order total amount: <span id="total-balance-gross-binai">₹ 0</span></b></p>
+      </div>
+
+      <!-- Deliver order Balance payment report -->
+      <div class="payment-report-block">
+        <h3 class="payment-report-header">Deliver order Balance payment report</h3>
+        <p>Balance Commission: <span id="balance-commission-after-payment">₹ 0</span></p>
+        <p>Balance Binai: <span id="balance-binai-after-payment">₹ 0</span></p>
+        <p><b>All Balance paid amount: <span id="total-paid-amount-all">₹ 0</span></b></p>
+      </div>
+
+      <!-- Payment History -->
+      <div id="payment-history">
+        <h3 class="payment-report-header">Payment History</h3>
+        <div class="table-container">
+          <table id="payment-history-table">
+            <thead><tr><th>Date</th><th>Amount</th><th>Paid Commission</th><th>Payment Mode</th><th class="print-hidden">Actions</th></tr></thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="btn-group no-print">
+        <button type="button" onclick="cancelToOrders()">Back</button>
+        <button class="pdf-download-btn" onclick="openPdfOptionsModal(preparePaymentDetailPdfContent)">Payment PDF</button>
+      </div>
+      <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+        Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" style="display: none;">
+    <p>MH Qadri Export Rugs © 2023</p>
+  </footer>
+  
+  <div id="pdf-options-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h2>Export Options</h2>
+      <div class="modal-buttons">
+        <button id="modal-share-btn">Share</button>
+        <button id="modal-print-btn">Print</button>
+        <button id="modal-download-btn">Download</button>
+      </div>
+      <button id="modal-close-btn" class="modal-close">Close</button>
+    </div>
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        try {
+          navigator.serviceWorker.register('/service-worker.js').then(registration => {
+            console.log('ServiceWorker Registration successful with scope: ', registration.scope);
+          }, err => {
+            console.error('ServiceWorker Registration failed: ', err);
+          });
+        } catch (error) {
+            console.error('ServiceWorker registration threw an exception:', error);
+        }
+      });
+    }
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyAdAlfWpiN9Zv3d2UT67wAMfmmQk0E3c6M",
+  authDomain: "mhqadri-cfad0.firebaseapp.com",
+  projectId: "mhqadri-cfad0",
+  storageBucket: "mhqadri-cfad0.firebasestorage.app",
+  messagingSenderId: "857314603733",
+  appId: "1:857314603733:web:a619f1de37702e9785285c"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+
+    const DB_NAME = 'MHQadriDB';
+    const DB_VERSION = 1;
+    const OBJECT_STORES = [
+        'companyProfiles', 'contractorProfiles', 'companyOrders', 'contractorOrders', 
+        'companyPayments', 'contractorPayments', 'settings', 'syncQueue'
+    ];
+    let localDB;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = event => reject("IndexedDB error: " + (event.target.error ? event.target.error.message : "Unknown error"));
+            request.onsuccess = event => {
+                localDB = event.target.result;
+                console.log("Local database initialized successfully.");
+                resolve(localDB);
+            };
+            request.onupgradeneeded = event => {
+                const db = event.target.result;
+                OBJECT_STORES.forEach(storeName => {
+                    if (!db.objectStoreNames.contains(storeName)) {
+                         if(storeName === 'syncQueue'){
+                            db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                         } else {
+                            db.createObjectStore(storeName, { keyPath: 'key' });
+                         }
+                    }
+                });
+            };
+        });
+    }
+
+    function saveDataToLocalDB(storeName, key, data) {
+        return new Promise((resolve, reject) => {
+            if (!localDB) { reject("Local DB not initialized."); return; }
+            const transaction = localDB.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const objectToStore = { key: key, ...data };
+            const request = store.put(objectToStore);
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    function getAllDataFromLocalDB(storeName) {
+        return new Promise((resolve, reject) => {
+            if (!localDB) { reject("Local DB not initialized."); return; }
+            const transaction = localDB.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const dataObject = {};
+                request.result.forEach(item => {
+                    const value = { ...item };
+                    delete value.key;
+                    dataObject[item.key] = value;
+                });
+                resolve(dataObject);
+            }
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+    
+    function deleteDataFromLocalDB(storeName, key) {
+        return new Promise((resolve, reject) => {
+            if (!localDB) { reject("Local DB not initialized."); return; }
+            const transaction = localDB.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            store.delete(key);
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = event => reject(event.target.error);
+        });
+    }
+
+    async function addToSyncQueue(operation, path, payload) {
+        if (!localDB) {
+            console.error("Cannot add to sync queue, DB not available.");
+            return;
+        }
+        const item = { operation, path, payload, timestamp: Date.now() };
+        const transaction = localDB.transaction(['syncQueue'], 'readwrite');
+        const store = transaction.objectStore('syncQueue');
+        store.add(item);
+    }
+    
+    async function processSyncQueue() {
+        if (!navigator.onLine || !localDB) {
+            console.log("Offline or DB not ready, skipping sync.");
+            return;
+        }
+
+        console.log("Online, processing sync queue...");
+        const transaction = localDB.transaction(['syncQueue'], 'readwrite');
+        const store = transaction.objectStore('syncQueue');
+        const items = await new Promise(resolve => store.getAll().onsuccess = e => resolve(e.target.result));
+        
+        if(items.length === 0) {
+            console.log("Sync queue is empty.");
+            return;
+        }
+
+        for (const item of items) {
+            try {
+                if (item.operation === 'save' || item.operation === 'update') {
+                    await db.ref(item.path).set(item.payload);
+                } else if (item.operation === 'delete') {
+                    await db.ref(item.path).remove();
+                }
+                const deleteTransaction = localDB.transaction(['syncQueue'], 'readwrite');
+                deleteTransaction.objectStore('syncQueue').delete(item.id);
+                console.log(`Synced and removed item ${item.id} from queue.`);
+            } catch (error) {
+                console.error(`Failed to sync item ${item.id}:`, error);
+                break; 
+            }
+        }
+    }
+    
+    window.addEventListener('online', processSyncQueue);
+
+    let companyProfiles = [], contractorProfiles = [];
+    let companyOrders = {}, contractorOrders = {};
+    let companyPayments = {}, contractorPayments = {};
+    let appSettings = {};
+    let currentOrderType = "company";
+    let selectedCompanyProfile = null, selectedContractorProfile = null;
+    let currentPdfContentGenerator = null;
+    let dbInitialized = false; 
+    const DEFAULT_ADDRESS_DETAILS = "Address: Chhota Mirzapur, Mirzapur, Uttar Pradesh, PIN: 231001\nMobile: 998445058\nProprietor: Mohd Hasan Ansari";
+
+    let inactivityTimer;
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    document.addEventListener("DOMContentLoaded", async function() {
+      try {
+        await initDB();
+        dbInitialized = true;
+      } catch (e) {
+        console.error("Could not initialize local database.", e);
+        showDbError();
+        dbInitialized = false;
+      }
+      
+      auth.onAuthStateChanged(user => {
+          if (user) {
+              console.log("User is logged in:", user.email);
+              showMainContent();
+          } else {
+              console.log("User is logged out.");
+              showLoginPage();
+          }
+      });
+
+      document.getElementById('login-form')?.addEventListener('submit', handleLoginSubmit);
+      document.getElementById('change-password-form')?.addEventListener('submit', handleChangePasswordSubmit);
+      document.getElementById('order-entry-form')?.addEventListener('submit', handleOrderSubmit);
+      
+      document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
+      document.getElementById('overlay')?.addEventListener('click', closeSidebar);
+      document.getElementById('change-password-btn')?.addEventListener('click', showChangePasswordSection);
+      document.getElementById('logout-btn')?.addEventListener('click', logout);
+      
+      document.getElementById('modal-close-btn').addEventListener('click', closePdfOptionsModal);
+      document.getElementById('modal-download-btn').addEventListener('click', handlePdfDownload);
+      document.getElementById('modal-print-btn').addEventListener('click', handlePdfPrint);
+      document.getElementById('modal-share-btn').addEventListener('click', handlePdfShare);
+
+      const binaiInput = document.getElementById('pay-binai-amount-input');
+      const commissionInput = document.getElementById('pay-commission-amount-input');
+
+      const cleanPastedInput = (event) => {
+        const input = event.target;
+        // Use setTimeout to allow the paste operation to complete
+        setTimeout(() => {
+            let value = input.value.replace(/[^0-9.]/g, ''); // केवल अंक और दशमलव रखें
+            const parts = value.split('.');
+            if (parts.length > 2) { // सुनिश्चित करें कि केवल एक दशमलव हो
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            if (input.value !== value) {
+                input.value = value;
+            }
+        }, 0);
+      };
+
+      binaiInput.addEventListener('input', cleanPastedInput);
+      commissionInput.addEventListener('input', cleanPastedInput);
+      binaiInput.addEventListener('paste', cleanPastedInput);
+      commissionInput.addEventListener('paste', cleanPastedInput);
+
+      window.addEventListener('resize', updateLayout);
+    });
+
+    function logoutDueToInactivity() {
+        if (auth.currentUser) { 
+            alert("आपको निष्क्रियता के कारण लॉग आउट कर दिया गया है।"); 
+            logout();
+        }
+    }
+
+    function resetInactivityTimer() {
+        if (auth.currentUser) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(logoutDueToInactivity, INACTIVITY_TIMEOUT);
+        }
+    }
+    
+    function triggerElementEdit(elementId, settingKey) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            editTitle(element, settingKey);
+        } else {
+            alert(`Element with ID '${elementId}' not found for editing.`);
+        }
+        closeSidebar();
+    }
+
+    function triggerElementEditFirstOfClass(elementClassSelector, settingKey) {
+        const element = document.querySelector(elementClassSelector);
+        if (element) {
+            editTitle(element, settingKey);
+        } else {
+            alert(`Element with class '${elementClassSelector}' not found for editing.`);
+        }
+        closeSidebar();
+    }
+    
+    function showDbError() {
+        document.getElementById('db-error-banner').style.display = 'block';
+        document.querySelectorAll('.fixed-btn, .add-entry-btn, .add-return-btn, .pay-amount-btn, .view-payment-details-btn, #backup-data-btn, #restore-file, form button[type="submit"], form button[type="button"]').forEach(btn => {
+            btn.disabled = true;
+            btn.title = "Local database is not available.";
+        });
+        updateLayout();
+    }
+
+    function showLoginPage() {
+      document.getElementById('login-page').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('profile-buttons-container').style.display = 'none';
+      document.getElementById('footer').style.display = 'none';
+      document.getElementById('sidebar-toggle').style.display = 'none';
+      document.getElementById('login-footer').style.display = 'block'; 
+      
+      clearTimeout(inactivityTimer);
+      activityEvents.forEach(event => document.removeEventListener(event, resetInactivityTimer, true));
+
+      updateLayout(); 
+    }
+
+    function showMainContent() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById('profile-buttons-container').style.display = 'flex'; 
+      document.getElementById('footer').style.display = 'flex'; 
+      document.getElementById('sidebar-toggle').style.display = 'block'; 
+      document.getElementById('login-footer').style.display = 'none'; 
+
+      if (dbInitialized) {
+        loadInitialData().then(() => {
+            hideAllSectionsAndShowOutput(); 
+            resetInactivityTimer(); 
+            activityEvents.forEach(event => document.addEventListener(event, resetInactivityTimer, true));
+        });
+      }
+    }
+
+    function hideAllSections() {
+      const sections = document.querySelectorAll('main section');
+      sections.forEach(section => {
+        if (section.id !== 'order-output-section') {
+          section.style.display = 'none';
+        }
+      });
+       document.getElementById('company-orders-container')?.classList.add('hidden');
+       document.getElementById('contractor-orders-container')?.classList.add('hidden');
+    }
+
+    function hideAllSectionsAndShowOutput() {
+        hideAllSections(); 
+        const outputSection = document.getElementById('order-output-section');
+        if (outputSection) {
+            outputSection.style.display = 'block'; 
+        }
+        selectedCompanyProfile = null;
+        selectedContractorProfile = null;
+        updateProfileDisplay();
+        highlightSelectedButton('company-profile-buttons', null);
+        highlightSelectedButton('contractor-buttons-container', null);
+        updateLayout();
+    }
+
+    function showChangePasswordSection() {
+        hideAllSections();
+        document.getElementById('change-password-section').style.display = 'block';
+        closeSidebar();
+        updateLayout();
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+
+    function updateLayout() {
+        const header = document.querySelector('header');
+        const profileButtonsContainer = document.getElementById('profile-buttons-container');
+        const main = document.querySelector('main');
+        const footer = document.getElementById('footer');
+        const loginFooter = document.getElementById('login-footer');
+        const loginPage = document.getElementById('login-page');
+        const errorBanner = document.getElementById('db-error-banner');
+
+        if (!main || !header) return; 
+
+        let headerHeight = header.offsetHeight;
+        if(errorBanner && errorBanner.style.display !== 'none'){
+            errorBanner.style.top = header.offsetHeight + 'px';
+        }
+
+        let totalTopOffset = header.offsetHeight;
+        if(errorBanner && errorBanner.style.display !== 'none'){
+            totalTopOffset += errorBanner.offsetHeight;
+        }
+
+        const footerHeight = (footer && footer.style.display !== 'none') ? footer.offsetHeight : 0;
+        const loginFooterHeight = (loginFooter && loginFooter.style.display !== 'none') ? loginFooter.offsetHeight : 0;
+        
+        if (loginPage && loginPage.style.display === 'flex') {
+            document.body.style.paddingTop = header.offsetHeight + 'px';
+            document.body.style.paddingBottom = loginFooterHeight + 'px';
+            main.style.marginTop = '0'; 
+        } else if (main.style.display !== 'none') {
+            if (profileButtonsContainer && profileButtonsContainer.style.display !== 'none') {
+                profileButtonsContainer.style.top = totalTopOffset + 'px'; 
+                main.style.marginTop = (totalTopOffset + profileButtonsContainer.offsetHeight + 10) + 'px';
+            } else {
+                main.style.marginTop = (totalTopOffset + 10) + 'px'; 
+            }
+            document.body.style.paddingTop = '0'; 
+            document.body.style.paddingBottom = footerHeight + 'px'; 
+        } else {
+            document.body.style.paddingTop = header.offsetHeight + 'px';
+            document.body.style.paddingBottom = footerHeight + 'px';
+            main.style.marginTop = (header.offsetHeight + 10) + 'px';
+        }
+    }
+    
+    function objectToArray(obj) {
+        if (!obj) return [];
+        return Object.values(obj);
+    }
+    
+    async function loadInitialData() {
+        if (!dbInitialized) {
+            console.error("Aborting data load because DB is not initialized.");
+            return;
+        }
+        console.log("Loading initial data...");
+        document.body.style.cursor = 'wait';
+        try {
+            const localDataPromises = {
+                companyProfiles: getAllDataFromLocalDB('companyProfiles'),
+                contractorProfiles: getAllDataFromLocalDB('contractorProfiles'),
+                companyOrders: getAllDataFromLocalDB('companyOrders'),
+                contractorOrders: getAllDataFromLocalDB('contractorOrders'),
+                companyPayments: getAllDataFromLocalDB('companyPayments'),
+                contractorPayments: getAllDataFromLocalDB('contractorPayments'),
+                settings: getAllDataFromLocalDB('settings')
+            };
+            const localResults = await Promise.all(Object.values(localDataPromises));
+            
+            companyProfiles = objectToArray(localResults[0]);
+            contractorProfiles = objectToArray(localResults[1]);
+            companyOrders = localResults[2];
+            contractorOrders = localResults[3];
+            companyPayments = localResults[4];
+            contractorPayments = localResults[5];
+            const settingsObj = localResults[6];
+            appSettings = settingsObj['appSettingsKey'] || {};
+
+            updateProfileButtons();
+            updateAppSettingsUI();
+
+            if (navigator.onLine) {
+                console.log("Online. Fetching from Firebase and syncing...");
+                await processSyncQueue();
+                
+                const snapshot = await db.ref().once('value');
+                const firebaseData = snapshot.val() || {};
+                
+                const { users, ...restOfData } = firebaseData;
+
+                companyProfiles = Object.values(restOfData.companyProfiles || {});
+                contractorProfiles = Object.values(restOfData.contractorProfiles || {});
+                companyOrders = restOfData.companyOrders || {};
+                contractorOrders = restOfData.contractorOrders || {};
+                companyPayments = restOfData.companyPayments || {};
+                contractorPayments = restOfData.contractorPayments || {};
+                appSettings = restOfData.settings || {};
+
+                await Promise.all([
+                    ...companyProfiles.map(p => saveDataToLocalDB('companyProfiles', p.name.replace(/[^a-zA-Z0-9]/g, '_'), p)),
+                    ...contractorProfiles.map(p => saveDataToLocalDB('contractorProfiles', p.name.replace(/[^a-zA-Z0-9]/g, '_'), p)),
+                    ...Object.entries(companyOrders).map(([key, val]) => saveDataToLocalDB('companyOrders', key, val)),
+                    ...Object.entries(contractorOrders).map(([key, val]) => saveDataToLocalDB('contractorOrders', key, val)),
+                    ...Object.entries(companyPayments).map(([key, val]) => saveDataToLocalDB('companyPayments', key, val)),
+                    ...Object.entries(contractorPayments).map(([key, val]) => saveDataToLocalDB('contractorPayments', key, val)),
+                    saveDataToLocalDB('settings', 'appSettingsKey', appSettings)
+                ]);
+
+                updateProfileButtons();
+                updateAppSettingsUI();
+            }
+
+        } catch (error) {
+            console.error('Critical error during data load:', error.message);
+        } finally {
+            document.body.style.cursor = 'default';
+            updateLayout();
+        }
+    }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      const email = document.getElementById('user-email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+          alert("Please enter both Email and Password.");
+          return;
+      }
+      
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+          alert(`Login Failed: ${error.message}`);
+      }
+    }
+
+    async function handleChangePasswordSubmit(event) {
+        event.preventDefault();
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+
+        if (!currentPassword || !newPassword) {
+            alert("Please fill all password fields."); return;
+        }
+        if (newPassword.length < 6) {
+            alert("New password must be at least 6 characters long."); return;
+        }
+        if (newPassword === currentPassword) {
+            alert("New password cannot be the same as the current password."); return;
+        }
+
+        const user = auth.currentUser;
+        if (!user) {
+            alert("No user is logged in. Please log in again.");
+            logout();
+            return;
+        }
+
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+        
+        try {
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newPassword);
+            alert('Password changed successfully.');
+            document.getElementById('change-password-form').reset();
+            hideAllSectionsAndShowOutput();
+        } catch (error) {
+            alert(`Error changing password: ${error.message}`);
+        }
+    }
+
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        auth.signOut().then(() => {
+            companyProfiles = []; contractorProfiles = []; companyOrders = {}; contractorOrders = {};
+            companyPayments = {}; contractorPayments = {}; appSettings = {};
+            selectedCompanyProfile = null; selectedContractorProfile = null;
+            closeSidebar();
+        }).catch(error => {
+            alert(`Logout failed: ${error.message}`);
+        });
+      }
+    }
+
+    function cancelChangePassword() {
+      document.getElementById('change-password-form').reset();
+      hideAllSectionsAndShowOutput(); 
+    }
+
+    function showCompanyProfileSection() {
+      hideAllSections();
+      document.getElementById('company-profile-section').style.display = 'block';
+      document.getElementById('company-profile-form').reset();
+      document.getElementById('company-name-input').focus();
+      updateLayout();
+    }
+
+    function showContractorProfileSection() {
+      hideAllSections();
+      document.getElementById('contractor-profile-section').style.display = 'block';
+      document.getElementById('contractor-profile-form').reset();
+      document.getElementById('contractor-name-input').focus();
+      updateLayout();
+    }
+
+    async function saveCompanyProfile() {
+      const nameInput = document.getElementById('company-name-input');
+      const name = nameInput.value.trim();
+      const mobile = document.getElementById('company-mobile-input').value.trim();
+      const address = document.getElementById('company-address-input').value.trim();
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_');
+
+      if (!name) { alert("Company name is required."); nameInput.focus(); return; }
+      if (companyProfiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+          alert(`Company "${name}" already exists.`); nameInput.focus(); return;
+      }
+
+      const profileData = { name, mobile, address, additional_columns: [] }; 
+      const path = `companyProfiles/${key}`;
+      
+      await saveDataToLocalDB('companyProfiles', key, profileData);
+      if(navigator.onLine) {
+          await db.ref(path).set(profileData);
+      } else {
+          await addToSyncQueue('save', path, profileData);
+      }
+      
+      alert(`Company profile "${name}" saved successfully.`);
+      await loadInitialData(); 
+      hideAllSectionsAndShowOutput(); 
+    }
+
+    async function saveContractorProfile() {
+      const nameInput = document.getElementById('contractor-name-input');
+      const name = nameInput.value.trim();
+      const mobile = document.getElementById('contractor-mobile-input').value.trim();
+      const address = document.getElementById('contractor-address-input').value.trim();
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_');
+
+      if (!name) { alert("Contractor name is required."); nameInput.focus(); return; }
+      if (contractorProfiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+          alert(`Contractor "${name}" already exists.`); nameInput.focus(); return;
+      }
+
+      const profileData = { name, mobile, address, additional_columns: [] };
+      const path = `contractorProfiles/${key}`;
+      
+      await saveDataToLocalDB('contractorProfiles', key, profileData);
+      if(navigator.onLine) {
+          await db.ref(path).set(profileData);
+      } else {
+          await addToSyncQueue('save', path, profileData);
+      }
+
+      alert(`Contractor profile "${name}" saved successfully.`);
+      await loadInitialData(); 
+      hideAllSectionsAndShowOutput(); 
+    }
+
+    function updateProfileButtons() {
+        const compContainer = document.getElementById('company-profile-buttons');
+        const contrContainer = document.getElementById('contractor-buttons-container');
+        if (!compContainer || !contrContainer) return;
+
+        compContainer.innerHTML = ""; 
+        contrContainer.innerHTML = ""; 
+
+        const sortedCompanies = [...companyProfiles].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedContractors = [...contractorProfiles].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedCompanies.forEach(profile => {
+            const btn = document.createElement("button");
+            btn.textContent = profile.name;
+            btn.title = `Mobile: ${profile.mobile || 'N/A'}\nAddress: ${profile.address || 'N/A'}`;
+            btn.onclick = () => selectCompanyProfile(profile);
+            btn.ondblclick = (e) => { 
+              e.stopPropagation();
+              if (confirm(`Delete company "${profile.name}"?\nThis will permanently remove the profile and all associated orders/payments.\nThis action cannot be undone.`)) {
+                deleteProfile('company', profile.name);
+              }
+            };
+            compContainer.appendChild(btn);
+        });
+
+        sortedContractors.forEach(profile => {
+            const btn = document.createElement("button");
+            btn.textContent = profile.name;
+            btn.title = `Mobile: ${profile.mobile || 'N/A'}\nAddress: ${profile.address || 'N/A'}`;
+            btn.onclick = () => selectContractorProfile(profile);
+            btn.ondblclick = (e) => { 
+              e.stopPropagation();
+              if (confirm(`Delete contractor "${profile.name}"?\nThis will permanently remove the profile and all associated orders/payments.\nThis action cannot be undone.`)) {
+                deleteProfile('contractor', profile.name);
+              }
+            };
+            contrContainer.appendChild(btn);
+        });
+
+        highlightSelectedButton('company-profile-buttons', selectedCompanyProfile?.name);
+        highlightSelectedButton('contractor-buttons-container', selectedContractorProfile?.name);
+
+        updateLayout(); 
+    }
+
+    async function deleteProfile(type, name) {
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_');
+      const profilePath = `${type}Profiles/${key}`;
+      const ordersPath = `${type}Orders/${key}`;
+      const paymentsPath = `${type}Payments/${key}`;
+      
+      await deleteDataFromLocalDB(`${type}Profiles`, key);
+      await deleteDataFromLocalDB(`${type}Orders`, key);
+      await deleteDataFromLocalDB(`${type}Payments`, key);
+
+      if(navigator.onLine) {
+          await db.ref(profilePath).remove();
+          await db.ref(ordersPath).remove();
+          await db.ref(paymentsPath).remove();
+      } else {
+          await addToSyncQueue('delete', profilePath, null);
+          await addToSyncQueue('delete', ordersPath, null);
+          await addToSyncQueue('delete', paymentsPath, null);
+      }
+
+      alert(`${ucfirst(type)} profile "${name}" and all related data deleted successfully.`);
+      await loadInitialData();
+      hideAllSectionsAndShowOutput(); 
+    }
+
+    function selectCompanyProfile(profile) {
+        selectedCompanyProfile = profile;
+        selectedContractorProfile = null; 
+        showCompanyOrders(); 
+        highlightSelectedButton('company-profile-buttons', profile.name); 
+        highlightSelectedButton('contractor-buttons-container', null); 
+    }
+
+    function selectContractorProfile(profile) {
+        selectedContractorProfile = profile;
+        selectedCompanyProfile = null; 
+        showContractorOrders(); 
+        highlightSelectedButton('contractor-buttons-container', profile.name); 
+        highlightSelectedButton('company-profile-buttons', null); 
+    }
+
+    function highlightSelectedButton(containerId, selectedName) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const buttons = container.querySelectorAll('button');
+        buttons.forEach(btn => {
+            if (btn.textContent === selectedName) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    function showCompanyOrders() {
+      if (!selectedCompanyProfile) return;
+      hideAllSections(); 
+      const container = document.getElementById('company-orders-container');
+      const mainOutput = document.getElementById('order-output-section');
+       if (!container || !mainOutput) return;
+
+      mainOutput.style.display = 'block'; 
+      document.getElementById('contractor-orders-container').classList.add('hidden');
+      container.classList.remove('hidden'); 
+
+      currentOrderType = 'company'; 
+      updateProfileDisplay(); 
+      updateCompanyOrdersTable(); 
+      updateCompanyStock(); 
+      updateLayout(); 
+    }
+
+    function showContractorOrders() {
+      if (!selectedContractorProfile) return;
+       hideAllSections(); 
+       const container = document.getElementById('contractor-orders-container');
+       const mainOutput = document.getElementById('order-output-section');
+        if (!container || !mainOutput) return;
+
+      mainOutput.style.display = 'block'; 
+      document.getElementById('company-orders-container').classList.add('hidden');
+      container.classList.remove('hidden'); 
+
+      currentOrderType = 'contractor'; 
+      updateProfileDisplay();
+      updateContractorOrdersTable();
+      updateContractorStock();
+      updateLayout();
+    }
+
+    function showAddOrderSection(orderType, isReturn = false) {
+      const profile = orderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+      if (!profile) {
+        alert(`Please select a ${orderType} profile first.`); return;
+      }
+
+      hideAllSections(); 
+      currentOrderType = orderType; 
+
+      const formSection = document.getElementById('order-entry-section');
+      const form = document.getElementById('order-entry-form');
+       if (!formSection || !form) return;
+
+      formSection.style.display = 'block'; 
+      form.reset(); 
+
+      const profileTypeName = ucfirst(orderType);
+      const actionLabel = isReturn ? "Carpet Bajar Entry" : "Order Entry";
+      document.getElementById('current-order-type-label').textContent = `${profileTypeName} (${profile.name}) - ${actionLabel}`;
+      document.getElementById('is-return-input').value = isReturn ? 'true' : 'false';
+
+      document.getElementById('kati-label').textContent = isReturn ? "Carpet Weight" : "Kati";
+      document.getElementById('tana-group').style.display = isReturn ? 'none' : 'block';
+      document.getElementById('material-jana-group').style.display = isReturn ? 'block' : 'none';
+      document.getElementById('peace-label').textContent = isReturn ? "Return Peace" : "Order Peace";
+
+      const companySelectGroup = document.getElementById('company-select-group');
+      const companySelectInput = document.getElementById('company-select-input');
+      const isContractor = (orderType === 'contractor');
+      companySelectGroup.style.display = isContractor ? 'block' : 'none';
+      companySelectInput.required = isContractor;
+      document.getElementById('company-select-label').innerHTML = isContractor ? "Select Company<span style='color:red;'>*</span>" : "Select Company"; 
+      if (isContractor) {
+         loadCompanySelect(); 
+      }
+
+      loadAdditionalFields(); 
+
+      document.getElementById('order-date-input').valueAsDate = new Date();
+      document.getElementById('order-date-input').focus();
+      updateLayout();
+    }
+
+    function loadCompanySelect() {
+        const select = document.getElementById('company-select-input');
+        if (!select) return;
+        select.innerHTML = "<option value=''>-- Select Company --</option>";
+        companyProfiles.sort((a, b) => a.name.localeCompare(b.name)).forEach(profile => {
+            const option = document.createElement("option");
+            option.value = profile.name;
+            option.textContent = profile.name;
+            select.appendChild(option);
+        });
+    }
+
+    function loadAdditionalFields() {
+        const container = document.getElementById("additional-fields");
+        if (!container) return;
+        container.innerHTML = ""; 
+
+        const profile = currentOrderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const additionalCols = profile?.additional_columns || [];
+
+        additionalCols.forEach(col => {
+            const div = document.createElement("div");
+            div.className = "form-group";
+
+            const label = document.createElement("label");
+            const cleanColName = col.replace(/[^a-zA-Z0-9-_]/g, ''); 
+            label.textContent = col; 
+            label.htmlFor = `additional-${cleanColName}`;
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.name = col; 
+            input.id = `additional-${cleanColName}`;
+            input.placeholder = `Enter ${col}`; 
+
+            div.appendChild(label);
+            div.appendChild(input);
+            container.appendChild(div);
+        });
+    }
+
+    async function handleOrderSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const isReturn = document.getElementById('is-return-input').value === 'true';
+        const profile = currentOrderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+
+        if (!profile) { alert("Error: Profile context lost. Cannot submit."); return; }
+        
+        const orderData = {
+            id: Date.now(), 
+            date: formData.get('date'), size: formData.get('size')?.trim() || '',
+            peace: parseFloat(formData.get('peace')) || 0, kati: parseFloat(formData.get('kati')) || 0,
+            tana: parseFloat(formData.get('tana')) || 0,
+            materialJana: parseFloat(formData.get('material-jana')) || 0, 
+            rate: parseFloat(formData.get('rate')) || 0, 
+            cmsnRate: parseFloat(formData.get('cmsnRate')) || 0, 
+            cmsnAmount: 0, 
+            description: formData.get('description')?.trim() || '',
+            isReturn: isReturn, additional: {}, company: null,
+            gaj: 0, finalGaj: 0, binaiAmount: 0
+        };
+
+        if (!orderData.date || !orderData.size) { alert("Date and Size are required."); return; }
+        
+        const normalizedSize = orderData.size.replace(/[×x*]/g, 'x');
+        const sizeParts = normalizedSize.split('x');
+
+        if (sizeParts.length !== 2) { alert("Invalid size format. Use 'Width×Height'."); return; }
+
+        if (orderData.peace === 0 && orderData.kati === 0 && orderData.tana === 0 && orderData.materialJana === 0) {
+             alert("At least one quantity field must have a value."); return;
+        }
+        
+        orderData.size = `${sizeParts[0].trim()}×${sizeParts[1].trim()}`;
+        
+        if (currentOrderType === 'company' && isReturn) {
+            const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+            const allOrdersForCompany = Object.values(companyOrders[profileKey] || {});
+            
+            const receivedPeace = allOrdersForCompany
+                .filter(o => !o.isReturn && o.size === orderData.size)
+                .reduce((sum, o) => sum + (o.peace || 0), 0);
+                
+            const returnedPeace = allOrdersForCompany
+                .filter(o => o.isReturn && o.size === orderData.size)
+                .reduce((sum, o) => sum + Math.abs(o.peace || 0), 0);
+                
+            const availableBalance = receivedPeace - returnedPeace;
+            const newReturnPeace = Math.abs(orderData.peace);
+
+            if (newReturnPeace > availableBalance) {
+                alert(`कारपेट बाजार की एंट्री कंपनी के ऑर्डर से ज़्यादा नहीं हो सकती।\nइस साइज़ (${orderData.size}) के लिए उपलब्ध बैलेंस: ${formatNumber(availableBalance)} पीस है।`);
+                return;
+            }
+        }
+
+        if (currentOrderType === 'contractor' && isReturn) {
+            const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+            const allOrdersForContractor = Object.values(contractorOrders[profileKey] || {});
+
+            const receivedPeace = allOrdersForContractor
+                .filter(o => !o.isReturn && o.size === orderData.size)
+                .reduce((sum, o) => sum + (o.peace || 0), 0);
+
+            const returnedPeace = allOrdersForContractor
+                .filter(o => o.isReturn && o.size === orderData.size)
+                .reduce((sum, o) => sum + Math.abs(o.peace || 0), 0);
+                
+            const availableBalance = receivedPeace - returnedPeace;
+            const newReturnPeace = Math.abs(orderData.peace);
+
+            if (newReturnPeace > availableBalance) {
+                alert(`ठेकेदार की कारपेट बाजार एंट्री उसके प्राप्त ऑर्डर से ज़्यादा नहीं हो सकती।\nइस साइज़ (${orderData.size}) के लिए उपलब्ध बैलेंस: ${formatNumber(availableBalance)} पीस है।`);
+                return;
+            }
+        }
+
+        if (currentOrderType === 'contractor' && !isReturn) { 
+            orderData.company = formData.get('company-select');
+            if (!orderData.company) { alert("कृपया इस ठेकेदार ऑर्डर के लिए एक कंपनी चुनें।"); return; }
+            
+            const companyKey = orderData.company.replace(/[^a-zA-Z0-9]/g, '_');
+            const newPeace = orderData.peace;
+
+            const companyOrderList = Object.values(companyOrders[companyKey] || {}).filter(o => !o.isReturn && o.size === orderData.size);
+            const contractorOrderList = Object.values(contractorOrders || {}).flatMap(c => Object.values(c)).filter(o => !o.isReturn && o.company === orderData.company && o.size === orderData.size);
+
+            const companyTotalPeace = companyOrderList.reduce((sum, o) => sum + (o.peace || 0), 0);
+            const contractorTotalPeace = contractorOrderList.reduce((sum, o) => sum + (o.peace || 0), 0);
+            const availableBalance = companyTotalPeace - contractorTotalPeace;
+
+            if (newPeace > availableBalance) {
+                alert(`ठेकेदार का ऑर्डर कंपनी के ऑर्डर से ज़्यादा नहीं हो सकता।\nइस साइज़ (${orderData.size}) के लिए उपलब्ध बैलेंस: ${formatNumber(availableBalance)} पीस है।`);
+                return;
+            }
+        }
+
+        try {
+            const widthInches = parseSizeToInches(sizeParts[0].trim());
+            const heightInches = parseSizeToInches(sizeParts[1].trim());
+            orderData.gaj = (widthInches * heightInches) / 1296;
+            const absPeace = Math.abs(orderData.peace);
+            orderData.finalGaj = orderData.gaj * absPeace;
+            orderData.binaiAmount = Math.round(orderData.finalGaj * orderData.rate);
+            if (orderData.cmsnRate > 0) orderData.cmsnAmount = Math.abs(orderData.finalGaj) * orderData.cmsnRate; 
+            if (isReturn) {
+                orderData.peace = -absPeace;
+                orderData.kati = -Math.abs(orderData.kati);
+                orderData.finalGaj = -Math.abs(orderData.finalGaj);
+                orderData.binaiAmount = -Math.abs(orderData.binaiAmount);
+            }
+        } catch (e) { alert(`Calculation error: ${e.message}.`); return; }
+
+        const additionalCols = profile?.additional_columns || [];
+        additionalCols.forEach(col => { orderData.additional[col] = formData.get(col)?.trim() || ""; });
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const orderPath = `${currentOrderType}Orders/${profileNameKey}/${orderData.id}`;
+
+        const ordersObject = currentOrderType === 'company' ? companyOrders : contractorOrders;
+        if (!ordersObject[profileNameKey]) ordersObject[profileNameKey] = {};
+        ordersObject[profileNameKey][orderData.id] = orderData;
+
+        await saveDataToLocalDB(`${currentOrderType}Orders`, profileNameKey, ordersObject[profileNameKey]);
+        
+        if (navigator.onLine) {
+            try {
+                await db.ref(orderPath).set(orderData);
+                await processSyncQueue();
+            } catch (error) {
+                await addToSyncQueue('save', orderPath, orderData);
+            }
+        } else {
+            await addToSyncQueue('save', orderPath, orderData);
+        }
+        
+        alert('Entry saved successfully.');
+        form.reset(); 
+        cancelToOrders();
+    }
+
+    function cancelToOrders() {
+      hideAllSections(); 
+      const outputSection = document.getElementById('order-output-section');
+       if (!outputSection) return;
+       outputSection.style.display = 'block'; 
+
+      if (selectedCompanyProfile) {
+        showCompanyOrders();
+      } else if (selectedContractorProfile) {
+        showContractorOrders();
+      } else {
+        hideAllSectionsAndShowOutput();
+      }
+      updateLayout();
+    }
+
+    function updateProfileDisplay() {
+      const compInfo = document.getElementById('company-profile-info');
+      const contrInfo = document.getElementById('contractor-profile-info');
+      if (!compInfo || !contrInfo) return; 
+
+      if (selectedCompanyProfile) {
+         compInfo.innerHTML = `<span>Name: <span>${selectedCompanyProfile.name}</span></span> <span>Mobile: <span>${selectedCompanyProfile.mobile || 'N/A'}</span></span> <span>Address: <span>${selectedCompanyProfile.address || 'N/A'}</span></span>`;
+      } else {
+         compInfo.innerHTML = `<span>Select a company profile...</span>`; 
+      }
+      if (selectedContractorProfile) {
+         contrInfo.innerHTML = `<span>Name: <span>${selectedContractorProfile.name}</span></span> <span>Mobile: <span>${selectedContractorProfile.mobile || 'N/A'}</span></span> <span>Address: <span>${selectedContractorProfile.address || 'N/A'}</span></span>`;
+      } else {
+         contrInfo.innerHTML = `<span>Select a contractor profile...</span>`; 
+      }
+    }
+
+    function updateCompanyOrdersTable() {
+      if (!selectedCompanyProfile) return;
+      const profileName = selectedCompanyProfile.name;
+      const profileNameKey = profileName.replace(/[^a-zA-Z0-9]/g, '_');
+      const ordersForProfile = companyOrders[profileNameKey] || {};
+      const orders = Object.values(ordersForProfile).sort((a,b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+      const regularOrders = orders.filter(o => !o.isReturn);
+      const returnOrders = orders.filter(o => o.isReturn);
+
+      const regularTable = document.getElementById('company-order-table');
+      const returnTable = document.getElementById('company-return-table');
+      const returnSection = document.getElementById('company-return-section');
+       if (!regularTable || !returnTable || !returnSection) return;
+
+      const baseCols = ["Date", "Size", "Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Binai Amt", "Cmsn Rate", "Cmsn Amt", "Net Binai Amt", "Desc"];
+      const additionalCols = selectedCompanyProfile.additional_columns || []; 
+      const allCols = [...baseCols, ...additionalCols, "Actions"];
+      
+      populateTableHeader(regularTable.querySelector('thead'), allCols, false);
+      populateTableBody(regularTable.querySelector('tbody'), regularOrders, allCols, additionalCols, 'company', false);
+      addTotalsRowToTable(regularTable, regularOrders, allCols, false);
+
+      populateTableHeader(returnTable.querySelector('thead'), allCols, true);
+      populateTableBody(returnTable.querySelector('tbody'), returnOrders, allCols, additionalCols, 'company', true);
+      addTotalsRowToTable(returnTable, returnOrders, allCols, true);
+
+      returnSection.style.display = returnOrders.length > 0 ? 'block' : 'none';
+    }
+
+    function updateContractorOrdersTable() {
+      if (!selectedContractorProfile) return;
+      const profileName = selectedContractorProfile.name;
+      const profileNameKey = profileName.replace(/[^a-zA-Z0-9]/g, '_');
+      const ordersForProfile = contractorOrders[profileNameKey] || {};
+      const orders = Object.values(ordersForProfile).sort((a,b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+      const regularOrders = orders.filter(o => !o.isReturn);
+      const returnOrders = orders.filter(o => o.isReturn);
+
+      const regularTable = document.getElementById('contractor-order-table');
+      const returnTable = document.getElementById('contractor-return-table');
+      const returnSection = document.getElementById('contractor-return-section');
+      if (!regularTable || !returnTable || !returnSection) return;
+
+      const baseCols = ["Date", "Size", "Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Binai Amt", "Cmsn Rate", "Cmsn Amt", "Net Binai Amt", "Desc", "Company"];
+      const additionalCols = selectedContractorProfile.additional_columns || [];
+      const allCols = [...baseCols, ...additionalCols, "Actions"];
+
+      populateTableHeader(regularTable.querySelector('thead'), allCols, false); 
+      populateTableBody(regularTable.querySelector('tbody'), regularOrders, allCols, additionalCols, 'contractor', false);
+      addTotalsRowToTable(regularTable, regularOrders, allCols, false);
+
+      populateTableHeader(returnTable.querySelector('thead'), allCols, true); 
+      populateTableBody(returnTable.querySelector('tbody'), returnOrders, allCols, additionalCols, 'contractor', true);
+      addTotalsRowToTable(returnTable, returnOrders, allCols, true);
+
+      returnSection.style.display = returnOrders.length > 0 ? 'block' : 'none';
+    }
+    
+    function addTotalsRowToTable(table, orders, allCols, isReturnTable) {
+        if (!table) return;
+        
+        let tfoot = table.querySelector('tfoot');
+        if (!tfoot) tfoot = table.createTFoot();
+        tfoot.innerHTML = '';
+        
+        if (orders.length === 0) return;
+
+        const totalsRow = tfoot.insertRow();
+        totalsRow.style.fontWeight = 'bold';
+        totalsRow.style.backgroundColor = '#e3f2fd';
+
+        const totals = {};
+        const columnsToSum = ["Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Cmsn Amt", "Binai Amt", "Net Binai Amt"];
+        columnsToSum.forEach(col => totals[col] = 0);
+
+        orders.forEach(order => {
+            totals["Peace"] += Math.abs(order.peace || 0);
+            totals["Final Gaj"] += Math.abs(order.finalGaj || 0);
+            totals["KatiOrWt"] += isReturnTable ? Math.abs(order.kati || 0) : (order.kati || 0);
+            totals["TanaOrMJ"] += isReturnTable ? (order.materialJana || 0) : (order.tana || 0);
+            
+            const grossBinai = Math.abs(order.binaiAmount || 0);
+            const cmsn = order.cmsnAmount || 0;
+            const netBinai = grossBinai - cmsn;
+
+            totals["Cmsn Amt"] += cmsn;
+            totals["Binai Amt"] += grossBinai;
+            totals["Net Binai Amt"] += netBinai;
+        });
+
+        allCols.forEach(colKey => {
+            const cell = totalsRow.insertCell();
+            if (colKey === "Date") {
+                cell.textContent = "Total";
+            } else if (columnsToSum.includes(colKey)) {
+                let value = totals[colKey];
+                if (colKey.includes("Amt") || colKey.includes("Binai")) {
+                    cell.textContent = formatBinaiAmount(value);
+                } else {
+                    cell.textContent = formatNumber(value);
+                }
+                cell.style.textAlign = "right";
+            }
+             if (colKey === "Actions") cell.classList.add("print-hidden");
+        });
+    }
+
+    function populateTableHeader(thead, allCols, isReturnTable) {
+      if (!thead) return;
+      thead.innerHTML = ''; 
+      const headerRow = thead.insertRow();
+      allCols.forEach(colKey => {
+        let colText = colKey;
+        if (colKey === "KatiOrWt") colText = isReturnTable ? "Weight" : "Kati";
+        if (colKey === "TanaOrMJ") colText = isReturnTable ? "Mat. Jama" : "Tana";
+        if (colKey === "Net Binai Amt") colText = "Net Binai";
+        
+        const th = document.createElement("th");
+        th.textContent = colText;
+        th.dataset.columnName = colKey; 
+        if (colKey === "Actions") th.classList.add("print-hidden"); 
+        headerRow.appendChild(th);
+      });
+    }
+
+    function populateTableBody(tbody, orders, allCols, additionalCols, type, isReturnTable) {
+        if (!tbody) return;
+        tbody.innerHTML = ''; 
+
+        if (!orders || orders.length === 0) {
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = allCols.length; 
+            cell.textContent = 'No entries found.';
+            cell.style.textAlign = 'center';
+            return;
+        }
+
+        orders.forEach(order => {
+            const row = tbody.insertRow();
+            row.dataset.id = order.id; 
+            row.dataset.isReturn = order.isReturn || false;
+
+            const rowDataMap = new Map(); 
+
+            const grossBinaiAbs = Math.abs(order.binaiAmount || 0);
+            const cmsnAbs = order.cmsnAmount || 0;
+            const netBinaiCalculated = grossBinaiAbs - cmsnAbs;
+
+            rowDataMap.set("Date", formatDateForDisplay(order.date));
+            rowDataMap.set("Size", order.size || 'N/A');
+            rowDataMap.set("Gaj", formatNumber(order.gaj)); 
+            rowDataMap.set("Peace", formatNumber(Math.abs(order.peace))); 
+            rowDataMap.set("Final Gaj", formatNumber(Math.abs(order.finalGaj))); 
+            rowDataMap.set("Rate", formatNumber(order.rate));
+            rowDataMap.set("Binai Amt", formatBinaiAmount(grossBinaiAbs)); 
+            rowDataMap.set("Cmsn Rate", formatNumber(order.cmsnRate));
+            rowDataMap.set("Cmsn Amt", formatBinaiAmount(cmsnAbs)); 
+            rowDataMap.set("Net Binai Amt", formatBinaiAmount(netBinaiCalculated));
+            rowDataMap.set("Desc", order.description || '');
+            
+            if (isReturnTable) { 
+                rowDataMap.set("KatiOrWt", formatNumber(Math.abs(order.kati))); 
+                rowDataMap.set("TanaOrMJ", formatNumber(order.materialJana));  
+            } else {
+                rowDataMap.set("KatiOrWt", formatNumber(order.kati));          
+                rowDataMap.set("TanaOrMJ", formatNumber(order.tana));          
+            }
+
+            if (type === 'contractor') rowDataMap.set("Company", order.company || ''); 
+
+            additionalCols.forEach(col => rowDataMap.set(col, order.additional?.[col] || ""));
+
+            allCols.forEach(colKey => { 
+                const cell = row.insertCell();
+                cell.dataset.columnName = colKey; 
+
+                if (colKey === "Actions") {
+                    cell.classList.add("print-hidden"); 
+                    cell.innerHTML = `<button class="edit-btn" onclick="editRow(this.closest('tr'), '${type}')" title="Edit">✏️</button> <button class="delete-btn" onclick="deleteRow(this.closest('tr'), '${type}')" title="Delete">🗑️</button>`;
+                } else {
+                    cell.textContent = rowDataMap.get(colKey) ?? '';
+                    if (["Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Cmsn Rate", "Cmsn Amt", "Binai Amt", "Net Binai Amt"].includes(colKey)) {
+                        cell.style.textAlign = "right"; 
+                    }
+                }
+            });
+
+            row.ondblclick = function() {
+                if (!this.classList.contains('editing')) editRow(this, type);
+            };
+        });
+    }
+
+    function editRow(row, type) {
+        if (!row || row.classList.contains('editing')) return; 
+
+        const tbody = row.closest('tbody');
+        const currentlyEditing = tbody?.querySelector('tr.editing');
+        if (currentlyEditing && currentlyEditing !== row) cancelEdit(currentlyEditing, type); 
+
+        row.classList.add('editing');
+        const cells = Array.from(row.cells);
+        const orderId = row.dataset.id; 
+
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const ordersForProfile = type === 'company' ? companyOrders[profileNameKey] : contractorOrders[profileNameKey];
+        
+        const order = ordersForProfile[orderId];
+        if (!order) {
+            alert("Error: Original order data not found for edit.");
+            cancelEdit(row, type);
+            return;
+        }
+        const isReturn = order.isReturn;
+
+        const getCell = (colKey) => cells.find(cell => cell.dataset.columnName === colKey);
+
+        getCell("Date").innerHTML = `<input type="date" value="${order.date}" required>`;
+        getCell("Size").innerHTML = `<input type="text" value="${order.size}" required>`;
+        getCell("Peace").innerHTML = `<input type="number" step="any" value="${Math.abs(order.peace)}">`; 
+        getCell("Rate").innerHTML = `<input type="number" step="any" value="${order.rate}">`;
+        getCell("Cmsn Rate").innerHTML = `<input type="number" step="any" value="${order.cmsnRate || 0}">`; 
+        getCell("Desc").innerHTML = `<input type="text" value="${order.description || ''}">`;
+        
+        if (isReturn) {
+            getCell("KatiOrWt").innerHTML = `<input type="number" step="any" value="${Math.abs(order.kati)}">`; 
+            getCell("TanaOrMJ").innerHTML = `<input type="number" step="any" value="${order.materialJana || 0}">`; 
+        } else {
+            getCell("KatiOrWt").innerHTML = `<input type="number" step="any" value="${order.kati || 0}">`; 
+            getCell("TanaOrMJ").innerHTML = `<input type="number" step="any" value="${order.tana || 0}">`; 
+        }
+
+        if (type === 'contractor') {
+            const companyCell = getCell("Company");
+            if (companyCell) {
+                const companySelect = document.createElement('select');
+                companySelect.required = true;
+                companySelect.innerHTML = "<option value=''>-- Select --</option>";
+                companyProfiles.sort((a,b)=>a.name.localeCompare(b.name)).forEach(comp => {
+                    const option = document.createElement("option");
+                    option.value = comp.name; option.textContent = comp.name;
+                    if (comp.name === order.company) option.selected = true;
+                    companySelect.appendChild(option);
+                });
+                companyCell.innerHTML = ''; companyCell.appendChild(companySelect);
+            }
+        }
+
+        const additionalCols = profile?.additional_columns || [];
+        additionalCols.forEach(col => {
+            const cell = getCell(col);
+            if (cell) cell.innerHTML = `<input type="text" value="${order.additional?.[col] || ''}" data-col-name="${col}">`;
+        });
+
+        const actionCell = getCell("Actions");
+        actionCell.innerHTML = `<button class="save-btn" onclick="saveRow(this, '${type}')" title="Save">✔️</button> <button class="cancel-btn" onclick="cancelEdit(this.closest('tr'), '${type}')" title="Cancel">❌</button>`;
+    }
+
+    function cancelEdit(row, type) {
+      if (!row || !row.classList.contains('editing')) return;
+      row.classList.remove('editing');
+      if (type === 'company') {
+        updateCompanyOrdersTable();
+      } else {
+        updateContractorOrdersTable();
+      }
+    }
+
+    async function saveRow(saveBtn, type) {
+        const row = saveBtn.closest('tr');
+        if (!row) return;
+        
+        const orderId = row.dataset.id; 
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) { alert("Profile context lost. Cannot save."); return; }
+
+        const getInputValue = (colKey) => row.querySelector(`[data-column-name='${colKey}'] input, [data-column-name='${colKey}'] select`)?.value;
+
+        const updatedData = {
+            id: parseInt(orderId), 
+            isReturn: row.dataset.isReturn === 'true',
+            date: getInputValue("Date"),
+            size: getInputValue("Size")?.trim() || '',
+            peace: parseFloat(getInputValue("Peace")) || 0, 
+            rate: parseFloat(getInputValue("Rate")) || 0,
+            cmsnRate: parseFloat(getInputValue("Cmsn Rate")) || 0,
+            description: getInputValue("Desc")?.trim() || '',
+            additional: {},
+        };
+        
+        try {
+            const normalizedSize = updatedData.size.replace(/[×x*]/g, 'x');
+            const sizeParts = normalizedSize.split('x');
+            const widthInches = parseSizeToInches(sizeParts[0].trim());
+            const heightInches = parseSizeToInches(sizeParts[1].trim());
+            updatedData.gaj = (widthInches * heightInches) / 1296;
+            const absPeace = Math.abs(updatedData.peace);
+            updatedData.finalGaj = updatedData.gaj * absPeace;
+            updatedData.binaiAmount = Math.round(updatedData.finalGaj * updatedData.rate);
+            updatedData.cmsnAmount = (updatedData.cmsnRate > 0) ? Math.abs(updatedData.finalGaj) * updatedData.cmsnRate : 0;
+
+            if (updatedData.isReturn) {
+                updatedData.peace = -absPeace;
+                updatedData.kati = -(parseFloat(getInputValue("KatiOrWt")) || 0);
+                updatedData.materialJana = parseFloat(getInputValue("TanaOrMJ")) || 0;
+                updatedData.tana = 0;
+                updatedData.finalGaj = -Math.abs(updatedData.finalGaj);
+                updatedData.binaiAmount = -Math.abs(updatedData.binaiAmount);
+            } else {
+                updatedData.peace = absPeace;
+                updatedData.kati = parseFloat(getInputValue("KatiOrWt")) || 0;
+                updatedData.tana = parseFloat(getInputValue("TanaOrMJ")) || 0;
+                updatedData.materialJana = 0;
+            }
+            if(type === 'contractor') updatedData.company = getInputValue("Company");
+
+        } catch (e) { alert(`Calculation error: ${e.message}.`); return; }
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const path = `${type}Orders/${profileNameKey}/${updatedData.id}`;
+        
+        const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+        if (ordersObject[profileNameKey]) {
+            ordersObject[profileNameKey][updatedData.id] = updatedData;
+        }
+        
+        await saveDataToLocalDB(`${type}Orders`, profileNameKey, ordersObject[profileNameKey]);
+        if(navigator.onLine){
+            try { await db.ref(path).set(updatedData); processSyncQueue(); } 
+            catch(error) { await addToSyncQueue('save', path, updatedData); }
+        } else {
+            await addToSyncQueue('save', path, updatedData);
+        }
+        
+        alert('Entry updated successfully.');
+        row.classList.remove('editing');
+        if (type === 'company') { updateCompanyOrdersTable(); updateCompanyStock(); } 
+        else { updateContractorOrdersTable(); updateContractorStock(); }
+    }
+
+    async function deleteRow(row, type) {
+        if (!row) return;
+        const orderId = row.dataset.id; 
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!orderId || !profile) { alert("Cannot delete row: Context missing."); return; }
+        
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        const confirmationMessage = `Are you sure you want to delete this entry?`;
+        if (confirm(confirmationMessage)) {
+            const path = `${type}Orders/${profileNameKey}/${orderId}`;
+            
+            const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+            if (ordersObject[profileNameKey] && ordersObject[profileNameKey][orderId]) {
+                delete ordersObject[profileNameKey][orderId];
+            }
+
+            await saveDataToLocalDB(`${type}Orders`, profileNameKey, ordersObject[profileNameKey]);
+            if(navigator.onLine){
+                try { await db.ref(path).remove(); processSyncQueue(); } 
+                catch(error) { await addToSyncQueue('delete', path, null); }
+            } else {
+                await addToSyncQueue('delete', path, null);
+            }
+            
+            alert('Entry deleted successfully.');
+            if (type === 'company') { updateCompanyOrdersTable(); updateCompanyStock(); } 
+            else { updateContractorOrdersTable(); updateContractorStock(); }
+        }
+    }
+
+    function updateCompanyStock() {
+      if (!selectedCompanyProfile) return;
+      const profileNameKey = selectedCompanyProfile.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const orders = Object.values(companyOrders[profileNameKey] || {});
+      calculateAndDisplayStock(orders, 'company');
+    }
+
+    function updateContractorStock() {
+      if (!selectedContractorProfile) return;
+      const profileNameKey = selectedContractorProfile.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const orders = Object.values(contractorOrders[profileNameKey] || {});
+      calculateAndDisplayStock(orders, 'contractor');
+    }
+
+    function calculateAndDisplayStock(orders, type) {
+        const receivedMap = {}, deliverMap = {}; 
+        let totalReceivedP = 0, totalReceivedM = 0, totalReceivedFG = 0, totalReceivedNetB = 0, totalReceivedCmsn = 0, totalReceivedGrossB = 0;
+        let totalDeliverP = 0, totalDeliverM = 0, totalDeliverFG = 0, totalDeliverNetB = 0, totalDeliverCmsn = 0, totalDeliverGrossB = 0; 
+
+        (orders || []).forEach(o => {
+            const size = o.size || 'N/A';
+            const normalizedSize = size.replace(/\s/g, '').toLowerCase(); 
+            const peace = Number(o.peace) || 0;
+            const kati = Number(o.kati) || 0;
+            const tana = Number(o.tana) || 0;
+            const mj = Number(o.materialJana) || 0;
+            const fg = Number(o.finalGaj) || 0; 
+            const binai = Number(o.binaiAmount) || 0; 
+            const cmsn = Number(o.cmsnAmount) || 0; 
+
+            if (o.isReturn) { 
+                const absP = Math.abs(peace);
+                deliverMap[normalizedSize] = (deliverMap[normalizedSize] || 0) + absP;
+                totalDeliverP += absP;
+                totalDeliverM += Math.abs(kati) + Math.abs(mj); 
+                totalDeliverFG += Math.abs(fg);
+                totalDeliverGrossB += Math.abs(binai);
+                totalDeliverCmsn += cmsn;
+                totalDeliverNetB += (Math.abs(binai) - cmsn); 
+            } else { 
+                receivedMap[normalizedSize] = (receivedMap[normalizedSize] || 0) + peace;
+                totalReceivedP += peace;
+                totalReceivedM += Math.abs(kati) + Math.abs(tana); 
+                totalReceivedFG += Math.abs(fg); 
+                totalReceivedGrossB += Math.abs(binai);
+                totalReceivedCmsn += cmsn;
+                totalReceivedNetB += (Math.abs(binai) - cmsn); 
+            }
+        });
+
+        const balanceMap = {}; 
+        new Set([...Object.keys(receivedMap), ...Object.keys(deliverMap)]).forEach(normSize => {
+            const balance = (receivedMap[normSize] || 0) - (deliverMap[normSize] || 0);
+            if (Math.abs(balance) > 0.001) balanceMap[normSize] = balance;
+        });
+        
+        const profileNameKey = (type === 'company' ? selectedCompanyProfile?.name : selectedContractorProfile?.name).replace(/[^a-zA-Z0-9]/g, '_');
+        const payments = Object.values((type === 'company' ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+        const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const totalCommissionPaid = payments.reduce((sum, p) => sum + (Number(p.commission_amount) || 0), 0);
+        
+        const outstandingCommission = Math.max(0, totalDeliverCmsn - totalCommissionPaid);
+        const outstandingBinai = Math.max(0, totalDeliverNetB - totalPaid);
+        
+        const sizeDisplayMap = orders.reduce((map, o) => {
+           const mapKey = o.size.replace(/\s/g, '').toLowerCase();
+           if (!map.has(mapKey)) map.set(mapKey, o.size);
+           return map;
+        }, new Map());
+        
+        const setStockValues = (prefix, peace, material, finalgaj, cmsn, binai) => {
+            document.getElementById(`${prefix}-peace`).textContent = formatNumber(peace);
+            document.getElementById(`${prefix}-material`).textContent = formatNumber(material);
+            document.getElementById(`${prefix}-finalgaj`).textContent = formatNumber(finalgaj);
+            document.getElementById(`${prefix}-cmsn`).textContent = formatBinaiAmount(cmsn); 
+            document.getElementById(`${prefix}-binai`).textContent = formatBinaiAmount(binai); 
+        };
+
+        populateStockTable(document.getElementById(`${type}-received-list`), receivedMap, sizeDisplayMap);
+        setStockValues(`${type}-received`, totalReceivedP, totalReceivedM, totalReceivedFG, totalReceivedCmsn, totalReceivedNetB);
+        document.getElementById(`${type}-received-total-binai`).textContent = formatBinaiAmount(totalReceivedGrossB);
+
+        populateStockTable(document.getElementById(`${type}-deliver-list`), deliverMap, sizeDisplayMap);
+        setStockValues(`${type}-deliver`, totalDeliverP, totalDeliverM, totalDeliverFG, outstandingCommission, outstandingBinai);
+
+        const totalBalanceP = totalReceivedP - totalDeliverP;
+        const totalBalanceM = totalReceivedM - totalDeliverM;
+        const totalBalanceFG = totalReceivedFG - totalDeliverFG;
+        const totalBalanceNetB = totalReceivedNetB - totalDeliverNetB; 
+        const totalBalanceCmsn = totalReceivedCmsn - totalDeliverCmsn;
+        const totalBalanceGrossB = totalReceivedGrossB - totalDeliverGrossB;
+
+        populateStockTable(document.getElementById(`${type}-balance-list`), balanceMap, sizeDisplayMap);
+        setStockValues(`${type}-balance`, totalBalanceP, totalBalanceM, totalBalanceFG, totalBalanceCmsn, totalBalanceNetB);
+        document.getElementById(`${type}-balance-total-binai`).textContent = formatBinaiAmount(totalBalanceGrossB);
+    }
+
+    function populateStockTable(tbody, sizePeaceMap, sizeDisplayMap) {
+      if (!tbody) return;
+      tbody.innerHTML = ""; 
+
+      const sortedNormalizedSizes = Object.keys(sizePeaceMap).sort((normA, normB) => {
+         const displayA = sizeDisplayMap.get(normA) || normA; 
+         const displayB = sizeDisplayMap.get(normB) || normB;
+         const parse = (s) => { 
+            const parts = String(s).trim().split(/[×x]/i);
+            const parsePart = (p) => {
+               if (!p) return NaN; p = p.trim();
+               if (!isNaN(p) && !p.includes('.')) return (parseInt(p, 10) || 0) * 12;
+               if (p.includes('.')) {
+                  const subParts = p.split('.');
+                  const feet = parseInt(subParts[0], 10) || 0; const inches = parseInt(subParts[1], 10) || 0;
+                  if (isNaN(feet) || isNaN(inches) || inches < 0 || inches > 11) return NaN; return (feet * 12) + inches;
+               } return NaN;
+            };
+            const n1 = parsePart(parts[0]); const n2 = parsePart(parts[1]);
+            return [isNaN(n1) ? Infinity : n1, isNaN(n2) ? Infinity : n2, s];
+         };
+         const [a1, a2, aS] = parse(displayA); const [b1, b2, bS] = parse(displayB);
+         if (a1 !== b1) return a1 - b1; if (a2 !== b2) return a2 - b2; return aS.localeCompare(bS);
+      });
+
+      sortedNormalizedSizes.forEach(normSize => {
+          if (Math.abs(sizePeaceMap[normSize]) > 0.001) {
+              const tr = tbody.insertRow();
+              tr.insertCell().textContent = sizeDisplayMap.get(normSize) || normSize;
+              tr.insertCell().textContent = formatNumber(sizePeaceMap[normSize]); 
+          }
+      });
+    }
+
+    function showPayAmountSection(type) {
+      const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+      if (!profile) { alert(`Please select a ${type} profile first.`); return; }
+
+      hideAllSections();
+      document.getElementById('pay-amount-section').style.display = 'block';
+      currentOrderType = type; 
+
+      const form = document.getElementById('pay-amount-form');
+      form.reset(); 
+
+      document.getElementById('pay-to-name').textContent = profile.name;
+      
+      const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const orders = Object.values((type === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+      const payments = Object.values((type === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+      
+      let totalDeliverCmsnAll = 0, totalDeliverGrossBAll = 0;
+      orders.filter(o => o.isReturn).forEach(o => {
+          totalDeliverGrossBAll += Math.abs(o.binaiAmount || 0);
+          totalDeliverCmsnAll += o.cmsnAmount || 0;
+      });
+
+      const totalDeliverNetBAll = totalDeliverGrossBAll - totalDeliverCmsnAll;
+      const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const totalCommissionPaid = payments.reduce((sum, p) => sum + (Number(p.commission_amount) || 0), 0);
+      
+      const outstandingCommission = Math.max(0, totalDeliverCmsnAll - totalCommissionPaid);
+      const remainingNetPayable = Math.max(0, totalDeliverNetBAll - totalPaid);
+      
+      // नया बदलाव: UI में उपयोग करने से पहले मानों को राउंड करें
+      const roundedOutstandingCommission = Math.round(outstandingCommission);
+      const roundedRemainingNetPayable = Math.round(remainingNetPayable);
+
+      document.getElementById('pay-total-outstanding-commission').textContent = formatBinaiAmount(roundedOutstandingCommission);
+      document.getElementById('pay-remaining-binai').textContent = formatBinaiAmount(roundedRemainingNetPayable);
+      
+      const fillCommissionBtn = document.getElementById('fill-commission-btn');
+      const fillBinaiBtn = document.getElementById('fill-binai-btn');
+
+      fillCommissionBtn.onclick = () => {
+          const commissionInput = document.getElementById('pay-commission-amount-input');
+          commissionInput.value = roundedOutstandingCommission; // राउंड की हुई राशि भरें
+          commissionInput.focus();
+      };
+
+      fillBinaiBtn.onclick = () => {
+          const binaiInput = document.getElementById('pay-binai-amount-input');
+          binaiInput.value = roundedRemainingNetPayable; // राउंड की हुई राशि भरें
+          binaiInput.focus();
+      };
+
+
+      document.getElementById('pay-date-input').valueAsDate = new Date();
+      document.getElementById('pay-binai-amount-input').focus();
+      updateLayout();
+    }
+
+    async function savePaymentData(paymentData, profileNameKey, type) {
+        const path = `${type}Payments/${profileNameKey}/${paymentData.id}`;
+        const paymentsObject = type === 'company' ? companyPayments : contractorPayments;
+        if (!paymentsObject[profileNameKey]) paymentsObject[profileNameKey] = {};
+        paymentsObject[profileNameKey][paymentData.id] = paymentData;
+
+        await saveDataToLocalDB(`${type}Payments`, profileNameKey, paymentsObject[profileNameKey]);
+        if(navigator.onLine){
+            try { await db.ref(path).set(paymentData); await processSyncQueue(); }
+            catch(e) { await addToSyncQueue('save', path, paymentData); }
+        } else {
+            await addToSyncQueue('save', path, paymentData);
+        }
+    }
+    
+    async function handleBinaiPaymentSubmit(event) {
+        event.preventDefault();
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const orders = Object.values((currentOrderType === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+        const payments = Object.values((currentOrderType === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+
+        let totalDeliverNetBAll = 0;
+        orders.filter(o => o.isReturn).forEach(o => {
+            totalDeliverNetBAll += (Math.abs(o.binaiAmount || 0) - (o.cmsnAmount || 0));
+        });
+        const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const outstandingNetBinai = Math.max(0, totalDeliverNetBAll - totalPaid);
+        const roundedOutstandingNetBinai = Math.round(outstandingNetBinai); // नया बदलाव: जाँच के लिए राउंड करें
+
+        const amountToPay = parseFloat(document.getElementById('pay-binai-amount-input').value) || 0;
+        const formDate = document.getElementById('pay-date-input').value;
+        const formMode = document.getElementById('pay-mode-select').value;
+        
+        if (!formDate || !formMode) { alert("Date and Payment Mode are required."); return; }
+        if (amountToPay <= 0) { alert("Binai payment amount must be positive."); return; }
+        
+        // नया बदलाव: राउंड की हुई राशि से जाँच करें
+        if (amountToPay > roundedOutstandingNetBinai) { 
+            alert(`Payment amount (${formatBinaiAmount(amountToPay)}) cannot be greater than the outstanding binai amount (${formatBinaiAmount(roundedOutstandingNetBinai)}).`);
+            return;
+        }
+
+        const paymentData = { id: Date.now(), date: formDate, mode: formMode, amount: amountToPay, commission_amount: 0 };
+        await savePaymentData(paymentData, profileNameKey, currentOrderType);
+        alert('Binai payment saved successfully.');
+        cancelToOrders();
+    }
+
+    async function handleCommissionPaymentSubmit(event) {
+        event.preventDefault();
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+        
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const orders = Object.values((currentOrderType === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+        const payments = Object.values((currentOrderType === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+        
+        let totalDeliverCmsnAll = 0;
+        orders.filter(o => o.isReturn).forEach(o => { totalDeliverCmsnAll += o.cmsnAmount || 0; });
+        const totalCommissionPaid = payments.reduce((sum, p) => sum + (Number(p.commission_amount) || 0), 0);
+        const outstandingCommission = Math.max(0, totalDeliverCmsnAll - totalCommissionPaid);
+        const roundedOutstandingCommission = Math.round(outstandingCommission); // नया बदलाव: जाँच के लिए राउंड करें
+
+        const amountToPay = parseFloat(document.getElementById('pay-commission-amount-input').value) || 0;
+        const formDate = document.getElementById('pay-date-input').value;
+        const formMode = document.getElementById('pay-mode-select').value;
+
+        if (!formDate || !formMode) { alert("Date and Payment Mode are required."); return; }
+        if (amountToPay <= 0) { alert("Commission payment amount must be positive."); return; }
+        
+        // नया बदलाव: राउंड की हुई राशि से जाँच करें
+        if (amountToPay > roundedOutstandingCommission) { 
+            alert(`Payment amount (${formatBinaiAmount(amountToPay)}) cannot be greater than the outstanding commission amount (${formatBinaiAmount(roundedOutstandingCommission)}).`);
+            return;
+        }
+        
+        const paymentData = { id: Date.now(), date: formDate, mode: formMode, amount: 0, commission_amount: amountToPay };
+        await savePaymentData(paymentData, profileNameKey, currentOrderType);
+        alert('Commission payment saved successfully.');
+        cancelToOrders();
+    }
+
+    function showPaymentDetailSection(type) {
+      const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+      if (!profile) { alert(`Please select a profile first.`); return; }
+
+      hideAllSections();
+      document.getElementById('payment-detail-section').style.display = 'block';
+      currentOrderType = type;
+
+      document.getElementById('payment-detail-name').textContent = profile.name;
+
+      const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const orders = Object.values((type === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+      const payments = Object.values((type === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+
+      let totalReceivedGrossB = 0, totalReceivedFG = 0, totalCmsnOnReceived = 0;
+      let totalDeliverGrossB = 0, totalDeliverFG = 0, totalCmsnOnDeliver = 0;
+
+      orders.forEach(o => {
+        const grossBinai = Math.abs(Number(o.binaiAmount) || 0); 
+        const fg = Math.abs(Number(o.finalGaj) || 0);
+        const cmsn = Number(o.cmsnAmount) || 0; 
+        if (o.isReturn) { 
+            totalDeliverGrossB += grossBinai; totalDeliverFG += fg; totalCmsnOnDeliver += cmsn;
+        } else { 
+            totalReceivedGrossB += grossBinai; totalReceivedFG += fg; totalCmsnOnReceived += cmsn;
+        }
+      });
+      
+      const totalReceivedNetB = totalReceivedGrossB - totalCmsnOnReceived;
+      const totalDeliverNetB = totalDeliverGrossB - totalCmsnOnDeliver;
+      
+      const totalPaidAmountOnly = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const totalCommissionPaid = payments.reduce((sum, p) => sum + (Number(p.commission_amount) || 0), 0);
+      
+      const avgReceivedRate = totalReceivedFG > 0 ? totalReceivedGrossB / totalReceivedFG : 0;
+      const avgDeliverRate = totalDeliverFG > 0 ? totalDeliverGrossB / totalDeliverFG : 0;
+      const avgReceivedCmsnRate = totalReceivedFG > 0 ? totalCmsnOnReceived / totalReceivedFG : 0;
+
+      const totalBalanceFG = totalReceivedFG - totalDeliverFG;
+      const totalBalanceNetB = totalReceivedNetB - totalDeliverNetB;
+      const totalBalanceCmsn = totalCmsnOnReceived - totalCmsnOnDeliver;
+      const totalBalanceGrossB = totalBalanceNetB + totalBalanceCmsn;
+
+      const outstandingBinaiAfterPayment = Math.max(0, totalDeliverNetB - totalPaidAmountOnly); 
+      const outstandingCommissionAfterPayment = Math.max(0, totalCmsnOnDeliver - totalCommissionPaid);
+      const allBalancePaidAmount = totalPaidAmountOnly + totalCommissionPaid;
+
+      document.getElementById('received-avg-rate').textContent = formatNumber(avgReceivedRate);
+      document.getElementById('received-avg-commission-rate').textContent = formatNumber(avgReceivedCmsnRate);
+      document.getElementById('total-received-finalgaj').textContent = formatNumber(totalReceivedFG);
+      document.getElementById('total-received-binai-gross').textContent = formatBinaiAmount(totalReceivedGrossB);
+      document.getElementById('total-commission-on-received').textContent = formatBinaiAmount(totalCmsnOnReceived);
+      document.getElementById('total-received-binai-net').textContent = formatBinaiAmount(totalReceivedNetB);
+      
+      document.getElementById('deliver-avg-rate').textContent = formatNumber(avgDeliverRate);
+      document.getElementById('total-deliver-finalgaj').textContent = formatNumber(totalDeliverFG);
+      document.getElementById('total-deliver-binai-gross').textContent = formatBinaiAmount(totalDeliverGrossB);
+      document.getElementById('bajar-outstanding-net-binai').textContent = formatBinaiAmount(totalDeliverNetB);
+      document.getElementById('bajar-outstanding-commission').textContent = formatBinaiAmount(totalCmsnOnDeliver);
+      
+      document.getElementById('total-balance-finalgaj').textContent = formatNumber(totalBalanceFG);
+      document.getElementById('total-balance-commission').textContent = formatBinaiAmount(totalBalanceCmsn);
+      document.getElementById('total-balance-binai').textContent = formatBinaiAmount(totalBalanceNetB);
+      document.getElementById('total-balance-gross-binai').textContent = formatBinaiAmount(totalBalanceGrossB);
+
+      document.getElementById('balance-commission-after-payment').textContent = formatBinaiAmount(outstandingCommissionAfterPayment);
+      document.getElementById('balance-binai-after-payment').textContent = formatBinaiAmount(outstandingBinaiAfterPayment);
+      document.getElementById('total-paid-amount-all').textContent = formatBinaiAmount(allBalancePaidAmount);
+
+      const paymentTable = document.getElementById('payment-history-table');
+      const tbody = paymentTable.querySelector('tbody');
+      tbody.innerHTML = "";
+      let tfoot = paymentTable.querySelector('tfoot');
+      if (tfoot) tfoot.innerHTML = "";
+      else tfoot = paymentTable.createTFoot();
+
+      const sortedPayments = Object.values(payments).sort((a, b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+      if (sortedPayments.length > 0) {
+        sortedPayments.forEach(p => { 
+          const tr = tbody.insertRow();
+          tr.dataset.id = p.id;
+          tr.insertCell().textContent = formatDateForDisplay(p.date);
+          tr.insertCell().textContent = formatBinaiAmount(p.amount);
+          tr.insertCell().textContent = formatBinaiAmount(p.commission_amount || 0);
+          tr.insertCell().textContent = p.mode; 
+          tr.insertCell().innerHTML = `<button class="edit-btn" onclick="editPaymentRow(this.closest('tr'), '${type}')" title="Edit">✏️</button> <button class="delete-btn" onclick="deletePaymentRow(this.closest('tr'), '${type}')" title="Delete">🗑️</button>`;
+          tr.cells[4].classList.add("print-hidden");
+          tr.ondblclick = () => { if (!tr.classList.contains('editing')) editPaymentRow(tr, type); };
+        });
+
+        const footerRow = tfoot.insertRow();
+        footerRow.insertCell().textContent = 'Total';
+        footerRow.insertCell().textContent = formatBinaiAmount(totalPaidAmountOnly);
+        footerRow.insertCell().textContent = formatBinaiAmount(totalCommissionPaid);
+        footerRow.insertCell();
+        footerRow.insertCell().classList.add("print-hidden");
+
+        const grandTotalRow = tfoot.insertRow();
+        const totalLabelCell = grandTotalRow.insertCell();
+        totalLabelCell.textContent = 'Grand Total Paid';
+        totalLabelCell.colSpan = 3;
+        totalLabelCell.style.textAlign = 'right';
+        const totalValueCell = grandTotalRow.insertCell();
+        totalValueCell.textContent = formatBinaiAmount(allBalancePaidAmount);
+        totalValueCell.colSpan = 2;
+
+      } else {
+          const tr = tbody.insertRow();
+          const td = tr.insertCell();
+          td.colSpan = 5; td.textContent = "No payment history found."; td.style.textAlign = "center";
+      }
+      updateLayout(); 
+    }
+
+    function editPaymentRow(row, type) {
+        if (!row || row.classList.contains('editing')) return;
+        const currentlyEditing = row.closest('tbody')?.querySelector('tr.editing');
+        if (currentlyEditing) cancelPaymentEdit(currentlyEditing, type);
+        
+        row.classList.add('editing');
+        const paymentId = row.dataset.id;
+        const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const payment = (type === 'company' ? companyPayments[profileNameKey] : contractorPayments[profileNameKey])[paymentId];
+
+        const cells = row.cells;
+        cells[0].innerHTML = `<input type="date" value="${payment.date}">`;
+        cells[1].innerHTML = `<input type="number" step="any" min="0" value="${payment.amount || 0}">`;
+        cells[2].innerHTML = `<input type="number" step="any" min="0" value="${payment.commission_amount || 0}">`;
+        cells[3].innerHTML = `<select>
+            <option value="cash" ${payment.mode === 'cash' ? 'selected' : ''}>Cash</option>
+            <option value="check" ${payment.mode === 'check' ? 'selected' : ''}>Check</option>
+            <option value="upi" ${payment.mode === 'upi' ? 'selected' : ''}>UPI</option>
+            <option value="bank-transfer" ${payment.mode === 'bank-transfer' ? 'selected' : ''}>Bank Transfer</option>
+        </select>`;
+        cells[4].innerHTML = `<button class="save-btn" onclick="savePaymentRow(this.closest('tr'), '${type}')" title="Save">✔️</button> <button class="cancel-btn" onclick="cancelPaymentEdit(this.closest('tr'), '${type}')" title="Cancel">❌</button>`;
+    }
+
+    function cancelPaymentEdit(row, type) {
+        if (!row.classList.contains('editing')) return;
+        showPaymentDetailSection(type); 
+    }
+
+    async function savePaymentRow(row, type) {
+        const paymentId = row.dataset.id;
+        const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        const inputs = row.querySelectorAll('input, select');
+        const updatedData = {
+            id: parseInt(paymentId),
+            date: inputs[0].value,
+            amount: parseFloat(inputs[1].value) || 0,
+            commission_amount: parseFloat(inputs[2].value) || 0,
+            mode: inputs[3].value,
+        };
+        
+        const path = `${type}Payments/${profileNameKey}/${paymentId}`;
+        const paymentsObject = type === 'company' ? companyPayments : contractorPayments;
+        paymentsObject[profileNameKey][paymentId] = updatedData;
+
+        await saveDataToLocalDB(`${type}Payments`, profileNameKey, paymentsObject[profileNameKey]);
+        if(navigator.onLine){
+            try { await db.ref(path).set(updatedData); await processSyncQueue(); }
+            catch(e) { await addToSyncQueue('save', path, updatedData); }
+        } else {
+            await addToSyncQueue('save', path, updatedData);
+        }
+        
+        alert('Payment updated successfully.');
+        showPaymentDetailSection(type);
+    }
+
+    async function deletePaymentRow(row, type) {
+        const paymentId = row.dataset.id;
+        const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!paymentId || !profile) { alert("Cannot delete row: Context missing."); return; }
+        
+        if (confirm("Are you sure you want to delete this payment entry?")) {
+            const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_');
+            const path = `${type}Payments/${profileNameKey}/${paymentId}`;
+            
+            const paymentsObject = type === 'company' ? companyPayments : contractorPayments;
+            if (paymentsObject[profileNameKey]) {
+                delete paymentsObject[profileNameKey][paymentId];
+            }
+
+            await saveDataToLocalDB(`${type}Payments`, profileNameKey, paymentsObject[profileNameKey]);
+            if(navigator.onLine){
+                try { await db.ref(path).remove(); await processSyncQueue(); }
+                catch(e) { await addToSyncQueue('delete', path, null); }
+            } else {
+                await addToSyncQueue('delete', path, null);
+            }
+            
+            alert('Payment deleted successfully.');
+            showPaymentDetailSection(type);
+        }
+    }
+
+    async function setLogoFromUrl() {
+        const currentUrl = appSettings.logo || '';
+        const newUrl = prompt("Please enter the new logo URL:", currentUrl);
+
+        if (newUrl === null || newUrl.trim() === currentUrl) {
+            closeSidebar();
+            return; 
+        }
+
+        if (!newUrl.trim()) {
+            alert("URL cannot be empty.");
+            return;
+        }
+
+        document.body.style.cursor = 'wait';
+        try {
+            appSettings['logo'] = newUrl.trim(); 
+            
+            await saveDataToLocalDB('settings', 'appSettingsKey', appSettings);
+            if (navigator.onLine) {
+                await db.ref('settings').update({ 'logo': newUrl.trim() });
+            } else {
+                await addToSyncQueue('update', 'settings', { 'logo': newUrl.trim() });
+            }
+
+            alert('Logo updated successfully!');
+            updateAppSettingsUI();
+        } catch (error) {
+            console.error("Error setting logo URL:", error);
+            alert("Failed to update logo: " + error.message);
+        } finally {
+            document.body.style.cursor = 'default';
+            closeSidebar();
+        }
+    }
+
+    async function restoreBackup(fileInput) {
+        if (!navigator.onLine) { alert("Restore requires an internet connection."); return; }
+        const file = fileInput.files[0];
+        if (!file || !file.name.toLowerCase().endsWith('.json')) { alert('Please select a valid JSON backup file.'); return; }
+        if (prompt(`Type 'RESTORE' to overwrite all data with this backup:`) !== 'RESTORE') { alert('Restore cancelled.'); return; }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const backupData = JSON.parse(e.target.result);
+                if (backupData.users) delete backupData.users;
+                
+                await db.ref().update(backupData);
+                alert('Data restored successfully! The app will now reload.');
+                location.reload(); 
+            } catch (error) { alert(`Restore failed: ${error.message}`); }
+        };
+        reader.readAsText(file);
+    }
+
+    async function backupData() {
+        if (!confirm('Create and download a full data backup file?')) return;
+        document.body.style.cursor = 'wait';
+        try {
+            const dataToBackup = {};
+            for(const store of OBJECT_STORES){
+                if(store !== 'syncQueue') dataToBackup[store] = await getAllDataFromLocalDB(store);
+            }
+            const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mhqadri_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('Backup downloaded successfully.');
+        } catch (error) { 
+            alert(`Backup error: ${error.message}`);
+        } finally {
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    function updateAppSettingsUI() {
+        const defaultLogoUrl = 'https://raw.githubusercontent.com/aatekaansari/Mhcarpat/main/logo.png';
+        const logoImg = document.getElementById('logo');
+        if (logoImg) {
+            const finalLogoUrl = appSettings.logo || defaultLogoUrl;
+            logoImg.src = finalLogoUrl;
+            logoImg.style.display = finalLogoUrl ? 'inline' : 'none';
+        }
+        document.getElementById('main-header-title').textContent = appSettings.main_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('company-main-title').textContent = appSettings.company_order_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('contractor-title').textContent = appSettings.contractor_order_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('payment-detail-main-title').textContent = appSettings.payment_detail_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('contractor-subtitle-company').textContent = appSettings.company_view_subtitle || 'Mirzapur';
+        document.getElementById('contractor-subtitle').textContent = appSettings.contractor_view_subtitle || 'Mirzapur';
+        document.querySelectorAll('.js-app-address-display').forEach(el => {
+            el.innerText = appSettings.app_address_details_text || DEFAULT_ADDRESS_DETAILS; 
+        });
+        updateLayout();
+    }
+
+    async function editTitle(element, settingKey) {
+        const currentText = element.textContent;
+        const newText = prompt("Enter new text:", currentText);
+        if (newText && newText.trim() !== currentText) {
+            element.textContent = newText.trim();
+            appSettings[settingKey] = newText.trim();
+            await saveDataToLocalDB('settings', 'appSettingsKey', appSettings);
+            if(navigator.onLine) {
+                await db.ref('settings').update({ [settingKey]: newText.trim() });
+            } else {
+                await addToSyncQueue('update', 'settings', { [settingKey]: newText.trim() });
+            }
+            updateAppSettingsUI();
+        }
+    }
+    
+    function preparePdfContent(type, isReturnReport) {
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+        
+        const containerId = `${type}-orders-container`;
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+        
+        const clone = container.cloneNode(true);
+        clone.style.backgroundColor = '#fff';
+        clone.querySelectorAll('.no-print, tr.editing, .print-hidden').forEach(el => el.remove());
+        
+        const mainTableSelector = isReturnReport ? `#${type}-return-table` : `#${type}-order-table`;
+        const otherTableSelector = isReturnReport ? `#${type}-order-table` : `#${type}-return-table`;
+        
+        clone.querySelector(otherTableSelector)?.closest('.table-container')?.remove();
+        if (isReturnReport) {
+            const headers = clone.querySelectorAll('h3');
+            headers.forEach(h3 => { if(h3.textContent.trim() === 'Order Issue') h3.remove() });
+        } else {
+            clone.querySelector(`[id$="-return-section"]`)?.remove();
+        }
+        clone.querySelector('.stock-issue-container')?.remove();
+
+        const pdfFileName = `${profile.name}_${isReturnReport ? 'Bajar' : 'Orders'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: clone, filename: pdfFileName };
+    }
+
+    function prepareAllReportPdfContent(type) {
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+
+        const printContainer = document.createElement('div');
+        printContainer.style.backgroundColor = '#fff';
+        printContainer.style.padding = '20px';
+
+        const headerClone = document.getElementById(`${type}-order-header`).cloneNode(true);
+        headerClone.querySelector('.no-print')?.remove();
+        printContainer.appendChild(headerClone);
+
+        const stockClone = document.getElementById(`${type}-orders-container`).querySelector('.stock-issue-container').cloneNode(true);
+        printContainer.appendChild(stockClone);
+        
+        const addressClone = document.getElementById(`${type}-orders-container`).querySelector('.address-details').cloneNode(true);
+        printContainer.appendChild(addressClone);
+        
+        const pdfFileName = `${profile.name}_All_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: printContainer, filename: pdfFileName };
+    }
+
+    function preparePaymentDetailPdfContent() {
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+        
+        const container = document.getElementById("payment-detail-section");
+        const clone = container.cloneNode(true);
+        clone.style.backgroundColor = '#fff';
+        clone.querySelectorAll('.no-print, .print-hidden').forEach(el => el.remove());
+        
+        const pdfFileName = `${profile.name}_PaymentDetails_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: clone, filename: pdfFileName };
+    }
+
+    function openPdfOptionsModal(generatorFunction) {
+        if (typeof generatorFunction !== 'function') {
+            console.error("PDF generator function is not valid.");
+            return;
+        }
+        currentPdfContentGenerator = generatorFunction;
+        
+        const shareBtn = document.getElementById('modal-share-btn');
+        if (navigator.share && navigator.canShare) {
+            shareBtn.disabled = false;
+        } else {
+            shareBtn.disabled = true;
+            shareBtn.title = "Your browser does not support sharing files.";
+        }
+
+        document.getElementById('pdf-options-modal').style.display = 'flex';
+    }
+
+    function closePdfOptionsModal() {
+        document.getElementById('pdf-options-modal').style.display = 'none';
+        currentPdfContentGenerator = null;
+    }
+    
+    async function handlePdfDownload() {
+        if (!currentPdfContentGenerator) return;
+        const content = currentPdfContentGenerator();
+        if (!content) { alert('Failed to generate content.'); return; }
+
+        document.body.style.cursor = 'wait';
+        const opt = { margin: 0.5, filename: content.filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        
+        await html2pdf().from(content.element).set(opt).save();
+        
+        document.body.style.cursor = 'default';
+        closePdfOptionsModal();
+    }
+
+    async function handlePdfShare() {
+        if (!currentPdfContentGenerator) return;
+        const content = currentPdfContentGenerator();
+        if (!content) { alert('Failed to generate content.'); return; }
+        
+        document.body.style.cursor = 'wait';
+        const opt = { margin: 0.5, filename: content.filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        
+        try {
+            const pdfBlob = await html2pdf().from(content.element).set(opt).output('blob');
+            const pdfFile = new File([pdfBlob], content.filename, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                await navigator.share({
+                    files: [pdfFile],
+                    title: content.filename,
+                    text: `Here is the report: ${content.filename}`,
+                });
+            } else {
+                alert('Sharing not supported for this file.');
+            }
+        } catch (error) {
+            console.error('Share failed:', error);
+        } finally {
+            document.body.style.cursor = 'default';
+            closePdfOptionsModal();
+        }
+    }
+    
+    function handlePdfPrint() {
+      if (!currentPdfContentGenerator) return;
+      const content = currentPdfContentGenerator();
+      if (!content) { alert('Failed to generate content.'); return; }
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow.document;
+      iframeDoc.open();
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+      styles.forEach(style => {
+          iframeDoc.head.appendChild(style.cloneNode(true));
+      });
+      iframeDoc.body.innerHTML = content.element.innerHTML;
+      iframeDoc.close();
+
+      iframe.onload = function() {
+          setTimeout(() => { 
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+              document.body.removeChild(iframe);
+          }, 500);
+      };
+
+      closePdfOptionsModal();
+    }
+
+    function formatNumber(x) {
+        const num = Number(x);
+        if (isNaN(num)) return '0';
+        return parseFloat(num.toFixed(2)).toString().replace(/\.00$/, '');
+    }
+    function formatBinaiAmount(x) {
+        const num = Math.round(Number(x) || 0);
+        return `₹ ${num.toLocaleString('en-IN')}`;
+    }
+    function formatDateForDisplay(isoDateString) {
+        if (!isoDateString) return 'N/A';
+        const [y, m, d] = isoDateString.split('-');
+        return `${d}/${m}/${y}`;
+    }
+    function parseSizeToInches(sizeStr) {
+        if (!sizeStr) throw new Error("Size string is empty.");
+        sizeStr = String(sizeStr).trim();
+        if (sizeStr.includes('.')) {
+            const [feet, inches] = sizeStr.split('.').map(s => parseInt(s, 10));
+            if (isNaN(feet) || isNaN(inches) || inches > 11) throw new Error(`Invalid format: "${sizeStr}"`);
+            return (feet * 12) + inches;
+        }
+        return parseInt(sizeStr, 10) * 12;
+    }
+    function ucfirst(string) { return string.charAt(0).toUpperCase() + string.slice(1); }
+  </script>
+</body>
+
+</html>
