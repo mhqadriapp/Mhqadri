@@ -1,0 +1,3962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MH Qadri Export Rugs</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196F3"/>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <style>
+    /* --- Error Message Style --- */
+    #db-error-banner {
+        display: none;
+        background-color: #d32f2f;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        position: fixed;
+        top: 60px; /* Below header */
+        width: 100%;
+        z-index: 1001;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    /* --- General Styles --- */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      padding-top: 60px; /* Adjusted based on fixed header */
+      padding-bottom: 40px; /* Adjusted based on fixed footer */
+      box-sizing: border-box;
+      min-height: 100vh; /* Ensure body takes full height */
+    }
+    header, footer#footer {
+      background-color: #2196F3;
+      color: white;
+      width: 100%;
+      position: fixed;
+      left: 0;
+      z-index: 100;
+      box-sizing: border-box;
+    }
+    header {
+      top: 0;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 60px;
+    }
+    header #logo {
+      max-height: 40px;
+      display: none; /* Initially hidden, shown if logo exists */
+    }
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      text-align: center;
+      flex-grow: 1;
+      cursor: pointer; /* Indicates it's editable */
+    }
+    #sidebar-toggle {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: none; /* Initially hidden, shown when logged in */
+      padding: 0 10px;
+      margin-left: 10px;
+    }
+    /* --- Sidebar & Overlay --- */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      right: -250px; /* Start off-screen */
+      width: 250px;
+      height: 100%;
+      background-color: #333;
+      color: white;
+      transition: right 0.3s ease;
+      z-index: 200;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    #sidebar.active {
+      right: 0; /* Slide in */
+    }
+    #sidebar button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: left;
+      flex-shrink: 0; /* Prevent buttons from shrinking */
+    }
+    #sidebar button:hover {
+      background-color: #1976D2;
+    }
+    #backup-data-btn {
+      background-color: #FFC107;
+      color: #333;
+    }
+    #backup-data-btn:hover {
+      background-color: #FFA000;
+    }
+    #sidebar .sidebar-spacer {
+      flex-grow: 1; /* Pushes close button to bottom */
+    }
+    #sidebar #close-sidebar-btn {
+      margin-top: auto; /* Stick to the bottom */
+      background-color: #607D8B;
+    }
+    #sidebar #close-sidebar-btn:hover {
+      background-color: #455A64;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none; /* Shown when sidebar is active */
+      z-index: 150;
+    }
+    #overlay.active {
+      display: block;
+    }
+    /* --- Footer --- */
+    footer#footer {
+      bottom: 0;
+      padding: 10px 0;
+      font-size: 14px;
+      display: flex; /* Use flex for centering */
+      justify-content: center;
+      align-items: center;
+      height: 40px;
+      gap: 10px; /* Space if adding more items */
+    }
+    /* --- Login Page Specific Styles --- */
+    #login-page {
+      background-color: #E3F2FD;
+      min-height: 100vh;
+      display: flex; /* Use flex for centering */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding-top: 70px; /* Account for header */
+      padding-bottom: 50px; /* Account for footer */
+      box-sizing: border-box;
+    }
+    #login-page h2 {
+      margin-bottom: 25px;
+      color: #1E88E5;
+      text-align: center;
+      font-size: 24px;
+    }
+    #login-form {
+      background-color: white;
+      padding: 35px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      width: 100%;
+      max-width: 340px; /* Limit form width */
+      box-sizing: border-box;
+    }
+    #login-form .form-group {
+      margin-bottom: 18px;
+    }
+    #login-form label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #444;
+    }
+    #login-form input[type="email"],
+    #login-form input[type="password"],
+    #login-form input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      margin: 5px 0; /* Adjust margin */
+      border: 1px solid #bdbdbd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    #login-form input[type="email"]:focus,
+    #login-form input[type="password"]:focus,
+    #login-form input[type="text"]:focus {
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+    }
+    #login-form button {
+      width: 100%;
+      padding: 14px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: bold;
+      transition: background-color: 0.3s ease;
+      margin-top: 15px; /* Space before button */
+    }
+    #login-form button:hover {
+      background-color: #1976D2;
+    }
+    #description {
+      max-width: 600px;
+      text-align: left;
+      border: 2px solid #90CAF9;
+      padding: 25px;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    #description p {
+      margin: 0;
+      line-height: 1.7;
+      color: #333;
+    }
+    #login-footer {
+      background-color: #1E88E5; /* Slightly different blue for login footer */
+      color: white;
+      text-align: center;
+      padding: 12px 0;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      font-size: 14px;
+      z-index: 100;
+    }
+    /* Login page layout adjustments */
+    #login-page .login-container {
+      display: flex;
+      flex-direction: column; /* Stack login and description by default */
+      justify-content: center;
+      align-items: center;
+      gap: 35px; /* Space between login box and description box */
+      width: 100%;
+      max-width: 600px; /* Max width for the content, description box will define this */
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #login-page .login-box {
+      width: 100%;
+      max-width: 340px; /* Keep login box width consistent */
+    }
+    #login-page .description-box {
+      width: 100%;
+      max-width: 600px; /* Allow description to be wider */
+    }
+
+    /* Responsive adjustments for login page */
+    @media (min-width: 768px) {
+      #login-page {
+        padding-top: 80px; /* More space on larger screens */
+      }
+      #login-page .login-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+        max-width: 600px;
+      }
+      #login-page .login-box {
+        max-width: 380px;
+      }
+      #login-page .description-box {
+        max-width: 600px;
+      }
+      #login-form {
+        padding: 40px;
+      }
+      #description {
+        padding: 30px;
+      }
+    }
+    /* --- End of Login Page Specific Styles --- */
+    
+    /* --- PDF Options Modal Styles --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      text-align: center;
+      width: 90%;
+      max-width: 350px;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .modal-buttons button {
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      font-weight: bold;
+    }
+    #modal-share-btn { background-color: #FF9800; } /* Orange */
+    #modal-share-btn:hover { background-color: #FB8C00; }
+    #modal-share-btn:disabled { background-color: #9E9E9E; cursor: not-allowed; }
+    #modal-print-btn { background-color: #2196F3; } /* Blue */
+    #modal-print-btn:hover { background-color: #1976D2; }
+    #modal-download-btn { background-color: #4CAF50; } /* Green */
+    #modal-download-btn:hover { background-color: #43A047; }
+    .modal-close {
+      background-color: #f44336; /* Red */
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+     .modal-close:hover {
+      background-color: #d32f2f;
+    }
+
+
+    /* --- Profile Buttons Container --- */
+    #profile-buttons-container {
+      width: 100%;
+      background-color: #424242; /* Dark grey background */
+      padding: 10px 5px;
+      position: fixed;
+      top: 60px; /* Below header */
+      left: 0;
+      display: none; /* Hidden initially, shown when logged in */
+      flex-direction: column; /* Stack action buttons and profile buttons */
+      gap: 10px;
+      align-items: center;
+      z-index: 99; /* Below header but above content */
+      box-sizing: border-box;
+    }
+    #profile-action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 10px; /* Space below action buttons */
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+    .fixed-btn { /* Style for Add Company/Contractor buttons */
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    .fixed-btn:disabled {
+        background-color: #9E9E9E;
+        cursor: not-allowed;
+    }
+    #company-fixed-btn { background-color: #4CAF50; } /* Green */
+    #company-fixed-btn:hover { background-color: #43A047; }
+    #contractor-fixed-btn { background-color: #FF9800; } /* Orange */
+    #contractor-fixed-btn:hover { background-color: #FB8C00; }
+
+    #company-profile-buttons,
+    #contractor-buttons-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 5px;
+      padding: 0 10px; /* Padding for the container */
+      box-sizing: border-box;
+    }
+    #company-profile-buttons button,
+    #contractor-buttons-container button { /* Style for individual profile buttons */
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow transition */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #company-profile-buttons button { background-color: #9C27B0; } /* Purple */
+    #contractor-buttons-container button { background-color: #FF5722; } /* Deep Orange */
+
+    #company-profile-buttons button:hover,
+    #contractor-buttons-container button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+     #company-profile-buttons button:hover { background-color: #7B1FA2; }
+     #contractor-buttons-container button:hover { background-color: #E64A19; }
+
+    #company-profile-buttons button.selected,
+    #contractor-buttons-container button.selected {
+        background-color: #FFEB3B; /* Yellow highlight */
+        color: #333; /* Dark text for yellow background */
+        font-weight: bold;
+        transform: translateY(0); /* No lift on selected */
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* Subtle shadow */
+    }
+
+    /* --- Main Content Area --- */
+    main {
+      padding: 20px;
+      max-width: 100%; /* Allow full width */
+      overflow-x: hidden; /* Prevent horizontal scroll on main */
+      margin-top: 140px; /* Default margin, adjusted by JS */
+      box-sizing: border-box;
+    }
+    section {
+      display: none; /* All sections hidden initially */
+      margin-bottom: 30px;
+      background-color: #BBDEFB; /* Light blue background for sections */
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    section h2 {
+      margin-top: 0;
+      color: #1976D2; /* Darker blue for headings */
+      border-bottom: 2px solid #1976D2;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    /* Specific section styles */
+    #change-password-section {
+      background-color: #ffcdd2; /* Light red */
+      border: 1px solid #e57373;
+    }
+    #change-password-section h2 {
+      color: #d32f2f; /* Dark red */
+      border-bottom-color: #d32f2f;
+    }
+    #material-return-section {
+        background-color: #C8E6C9; /* Light Green */
+        border: 1px solid #A5D6A7;
+    }
+    #material-return-section h2 {
+        color: #388E3C; /* Dark Green */
+        border-bottom-color: #388E3C;
+    }
+
+
+    /* --- Tables --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      min-width: 600px; /* Minimum width for horizontal scroll */
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    table, th, td {
+      border: 1px solid #ddd; /* Light grey border */
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 14px;
+      word-wrap: break-word; /* Wrap long text */
+      vertical-align: middle; /* Align content vertically */
+    }
+    th {
+      background-color: #2196F3; /* Header background */
+      color: white;
+      font-weight: bold;
+      position: sticky; /* Make header sticky within container */
+      top: 0; /* Stick to top of scrolling container */
+      z-index: 10; /* Above table body */
+    }
+    tbody tr:hover {
+      background-color: #f5f5f5; /* Row hover effect */
+    }
+    tfoot tr {
+        font-weight: bold;
+        background-color: #e3f2fd;
+    }
+    tfoot td {
+        color: #0d47a1;
+    }
+    .table-container {
+      overflow-x: auto; /* Enable horizontal scroll for the table */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      margin-bottom: 20px;
+      border: 1px solid #ddd; /* Border around the scrolling area */
+      border-radius: 4px;
+    }
+
+    /* --- Forms --- */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    input[type="password"],
+    input[type="email"],
+    input[type="tel"],
+    select,
+    textarea { /* Added textarea */
+      width: 100%;
+      padding: 10px 12px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px; /* Larger font for inputs */
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      font-family: Arial, sans-serif; /* Ensure textarea inherits font */
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="number"]:focus,
+    input[type="password"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    select:focus,
+    textarea:focus { /* Added textarea */
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    }
+    input[name="date"] { /* Specific style for date inputs if needed */
+      border-color: #2196F3;
+    }
+    input[readonly], input.readonly-display {
+      background-color: #e0e0e0; /* Grey out readonly fields */
+      cursor: not-allowed;
+      border-color: #ccc;
+      box-shadow: none;
+    }
+    /* Display Info Box Style */
+    .display-info {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #e0f2f7; /* Light cyan background */
+      border-left: 4px solid #0288d1; /* Blue left border */
+      border-radius: 4px;
+    }
+    .display-info p {
+      margin: 5px 0;
+      font-size: 15px;
+      color: #333;
+      display: flex;
+      align-items: center;
+    }
+    .display-info p span { /* Style for the value part */
+      font-weight: bold;
+      color: #01579B; /* Darker blue */
+      margin-left: 5px;
+    }
+
+    /* --- Buttons --- */
+    button { /* General button style */
+      background-color: #2196F3;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px; /* Spacing around buttons */
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      vertical-align: middle; /* Align buttons nicely if inline */
+    }
+    button:hover {
+      background-color: #1976D2;
+      transform: translateY(-2px); /* Lift effect */
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+    button:active {
+      transform: translateY(0px); /* Press effect */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:disabled {
+        background-color: #BDBDBD;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    button[type="button"] { /* Default style for Cancel/Back buttons */
+      background-color: #f44336; /* Red */
+    }
+    button[type="button"]:hover {
+      background-color: #d32f2f;
+    }
+     button[type="button"]:disabled:hover {
+        background-color: #BDBDBD; /* Override hover for disabled cancel button */
+    }
+    .auto-fill-btn {
+        margin-left: 10px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: bold;
+        background-color: #607D8B; /* Grey */
+        border-radius: 10px;
+        cursor: pointer;
+        border: none;
+        color: white;
+        vertical-align: middle;
+    }
+    .auto-fill-btn:hover {
+        background-color: #455A64;
+    }
+    /* Vertical form layout */
+    .vertical-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Space between form groups */
+    }
+    /* Button Group Styles */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap; /* Wrap buttons on smaller screens */
+    }
+    .btn-group.no-print button { /* Specific styles for buttons in print-hidden groups */
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    /* Specific Button Colors */
+    .add-entry-btn { background-color: #4CAF50; }
+    .add-entry-btn:hover { background-color: #43A047; }
+    .add-return-btn { background-color: #F44336; }
+    .add-return-btn:hover { background-color: #D32F32; }
+    .pay-amount-btn { background-color: #2196F3; }
+    .pay-amount-btn:hover { background-color: #1976D2; }
+    .view-payment-details-btn { background-color: #9C27B0; }
+    .view-payment-details-btn:hover { background-color: #7B1FA2; }
+    .pdf-download-btn { background-color: #607D8B; }
+    .pdf-download-btn:hover { background-color: #455A64; }
+    .pay-commission-btn { background-color: #FF9800; } /* Orange for commission */
+    .pay-commission-btn:hover { background-color: #FB8C00; }
+    .material-return-btn { background-color: #009688; } /* Teal */
+    .material-return-btn:hover { background-color: #00796B; }
+    .settle-advance-btn { background-color: #8BC34A; } /* Light Green for Settle */
+    .settle-advance-btn:hover { background-color: #7CB342; }
+
+
+    /* --- Profile Info Display --- */
+    .profile-info {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      font-size: 14px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      text-align: center;
+      padding: 10px;
+      background-color: #e3f2fd; /* Light blue background */
+      border-radius: 4px;
+    }
+    .profile-info span { /* Label part */
+      font-weight: normal;
+      color: #555;
+    }
+    .profile-info span span { /* Value part */
+      font-weight: bold;
+      color: #333;
+      margin-left: 5px;
+    }
+    .profile-info span.advance-info span { /* Specific style for advance amount */
+        color: #c62828; /* Red color for advance */
+    }
+
+    /* --- Orders Container Styling --- */
+    .orders-container {
+      margin-bottom: 40px;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc; /* Default border */
+    }
+    #company-orders-container { background-color: #E3F2FD; border-color: #90CAF9; }
+    #contractor-orders-container { background-color: #E8F5E9; border-color: #A5D6A7; }
+
+    #company-order-header,
+    #contractor-order-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+    #company-order-header h2, /* Main title within order section (e.g., Company View) */
+    #contractor-order-header h2#contractor-title { /* Main title within order section (e.g., Contractor View) */
+      margin: 0 0 5px 0;
+      font-size: 24px;
+      color: #1E88E5;
+      cursor: pointer; /* For editing */
+    }
+
+    #company-order-header h3.contractor-subtitle-display, /* Company View's "Mirzapur" subtitle */
+    #contractor-order-header h3#contractor-subtitle { /* Contractor View's "Mirzapur" subtitle */
+      margin: 5px 0 15px 0;
+      font-size: 18px;
+      color: #555;
+      font-weight: normal;
+      cursor: pointer; /* For editing */
+    }
+    /* Specific style for subtitle in company view */
+    #company-order-header h3.contractor-subtitle-display {
+      color: #1b5e20; /* Green color */
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    /* Sub-headers within sections (like "Order Issue", "Carpet Bajar Report") */
+    #order-output-section h3:not(.contractor-subtitle-display):not(#contractor-subtitle) { /* Target specific H3s */
+      font-size: 16px;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      color: #444;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 5px;
+    }
+    /* Target the "Company Orders" / "Contractor Orders" subtitles */
+    #company-order-header h3:not(.contractor-subtitle-display),
+    #contractor-order-header h3:not(#contractor-subtitle) {
+        margin: 15px 0 10px 0;
+        font-size: 20px; /* Make it a bit more prominent */
+        color: #333;
+        font-weight: bold;
+    }
+
+
+    /* --- Stock Issue Tables Styling --- */
+    .stock-issue-container {
+      display: flex;
+      flex-direction: row; /* Side by side for all screens */
+      justify-content: flex-start; /* Align items to the start for scrolling */
+      gap: 10px;
+      margin-top: 20px;
+      overflow-x: auto; /* Enable horizontal scroll for all screens */
+      -webkit-overflow-scrolling: touch;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    .stock-issue-container > div { /* Each box (Received, Deliver, Balance) */
+      border: 1px solid #ddd;
+      padding: 10px;
+      background: #fff;
+      border-radius: 4px;
+      min-width: 200px; /* Minimum width for each box, consistent across screens */
+      flex-shrink: 0; /* Prevent shrinking, enables horizontal scroll */
+      text-align: center;
+      vertical-align: top;
+    }
+    /* Specific tables within stock container */
+    #company-received-table, #company-deliver-table, #company-balance-table,
+    #contractor-received-table, #contractor-deliver-table, #contractor-balance-table {
+      width: auto; /* Auto width based on content */
+      min-width: 150px; /* Minimum width */
+      font-size: 11px; /* Smaller font */
+      border-collapse: collapse;
+      margin: 0 auto; /* Center table within its div */
+    }
+    /* Cells within stock tables */
+    #company-received-table th, #company-received-table td,
+    #company-deliver-table th, #company-deliver-table td,
+    #company-balance-table th, #company-balance-table td,
+    #contractor-received-table th, #contractor-received-table td,
+    #contractor-deliver-table th, #contractor-deliver-table td,
+    #contractor-balance-table th, #contractor-balance-table td {
+      padding: 5px;
+      border: 1px solid #ddd;
+      white-space: nowrap; /* Prevent text wrapping */
+      text-align: right; /* Right-align numbers */
+    }
+    /* First column (Size label) left-aligned */
+    #company-received-table td:first-child, #company-deliver-table td:first-child,
+    #company-balance-table td:first-child,
+    #contractor-received-table td:first-child, #contractor-deliver-table td:first-child,
+    #contractor-balance-table td:first-child,
+    #company-received-table th:first-child, #company-deliver-table th:first-child,
+    #company-balance-table th:first-child,
+    #contractor-received-table th:first-child, #contractor-deliver-table th:first-child,
+    #contractor-balance-table th:first-child {
+      text-align: left;
+    }
+    /* Header cells in stock tables */
+    #company-received-table th, #company-deliver-table th, #company-balance-table th,
+    #contractor-received-table th, #contractor-deliver-table th, #contractor-balance-table th {
+      background-color: #64B5F6; /* Lighter blue */
+      color: white;
+      font-weight: bold;
+      text-align: center; /* Center header text */
+    }
+    /* Footer cells in stock tables */
+    #company-received-table tfoot td, #company-deliver-table tfoot td,
+    #company-balance-table tfoot td,
+    #contractor-received-table tfoot td, #contractor-deliver-table tfoot td,
+    #contractor-balance-table tfoot td {
+      font-weight: bold;
+      background-color: #f0f0f0; /* Light grey footer */
+    }
+    /* Footer first cell (label like "Total Peace") right-aligned */
+    #company-received-table tfoot td:first-child, #company-deliver-table tfoot td:first-child,
+    #company-balance-table tfoot td:first-child,
+    #contractor-received-table tfoot td:first-child, #contractor-deliver-table tfoot td:first-child,
+    #contractor-balance-table tfoot td:first-child {
+      text-align: right;
+    }
+    .stock-issue-container > div > h4 {
+      font-size: 13px;
+      margin: 0 0 10px 0;
+      text-align: center;
+      white-space: nowrap;
+      color: #1E88E5;
+    }
+
+    /* --- Payment Detail Section Styling --- */
+    #payment-detail-section {
+      background-color: #FFF9C4; /* Light yellow */
+      border: 1px solid #FFF59D;
+    }
+    #payment-detail-section h2 { /* Main title (MH Qadri...) */
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: #1E88E5;
+      border-bottom: 2px solid #1E88E5;
+      padding-bottom: 10px;
+      cursor: pointer; /* Editable */
+    }
+    #payment-detail-section h3:not(.payment-report-header):not(.balance-sheet-card h4) { /* Sub-header "Payment Details for ..." */
+      text-align: center;
+      font-size: 20px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #FBC02D;
+      padding-bottom: 5px;
+    }
+    .payment-report-header {
+      text-align: left;
+      font-size: 18px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      color: #795548; /* Brown color */
+      border-bottom: 1px dashed #795548;
+      padding-bottom: 5px;
+    }
+
+    .payment-report-block, .grand-total-block {
+      text-align: left;
+      font-size: 14px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+    .payment-report-block p, .grand-total-block p {
+      margin: 8px 0;
+      line-height: 1.6;
+      color: #444;
+    }
+    .payment-report-block p span, .grand-total-block p span {
+      font-weight: bold;
+      margin-left: 5px;
+      color: #000;
+    }
+    .grand-total-block {
+        background-color: #E1F5FE;
+        border-left: 5px solid #0288D1;
+        margin-top: -10px; /* Pull it closer to the table above */
+    }
+    .grand-total-block p {
+        font-size: 16px;
+    }
+    .grand-total-block p span {
+        color: #01579B;
+    }
+    #payment-history, #advance-history {
+      padding: 0;
+      border: none;
+      background: none;
+      margin-bottom: 20px;
+    }
+    #payment-history-table, #advance-history-table {
+      min-width: 100%;
+      margin-top: 10px;
+    }
+    #payment-history-table thead, #advance-history-table thead {
+      background-color: #A1887F; /* Brown header */
+      color: white;
+    }
+    #payment-history-table tfoot td, #advance-history-table tfoot td {
+        color: #3e2723;
+    }
+    #advance-history-table thead {
+        background-color: #00796B; /* Teal header for advance */
+    }
+
+
+    /* --- Balance Sheet (Embedded) Styling --- */
+    #balance-sheet-summary-container { margin-top: 30px; }
+    .balance-sheet-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .balance-sheet-card {
+        background: #fff; padding: 20px; border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 4px solid #009688;
+    }
+    .balance-sheet-card h4 {
+        margin-top: 0; margin-bottom: 15px; color: #00796B;
+        border-bottom: 1px solid #eee; padding-bottom: 10px;
+    }
+    .balance-sheet-card p {
+        margin: 10px 0; display: flex; justify-content: space-between; font-size: 15px;
+    }
+    .balance-sheet-card p span { font-weight: bold; color: #333; }
+    .balance-sheet-final-summary {
+        margin-top: 25px; padding: 20px; background-color: #E0F2F1;
+        border: 1px solid #B2DFDB; border-radius: 8px; text-align: center;
+    }
+    .balance-sheet-final-summary h4 { font-size: 20px; color: #004D40; margin: 0 0 10px 0; }
+    .balance-sheet-final-summary p { font-size: 24px; font-weight: bold; color: #004D40; margin: 0; }
+
+    /* --- Pay Amount Section Styling --- */
+    #pay-amount-section {
+      background-color: #C8E6C9; /* Light green */
+      border: 1px solid #A5D6A7;
+    }
+    #pay-amount-section h2 {
+      color: #388E3C; /* Dark green */
+      border-bottom-color: #388E3C;
+    }
+    #pay-amount-summary {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    #pay-amount-summary p {
+      margin: 8px 0;
+      color: #333;
+    }
+    #pay-amount-summary p span {
+      font-weight: bold;
+      color: #1b5e20;
+      margin-left: 5px;
+    }
+    #pay-amount-summary p span.advance-info {
+        color: #c62828; /* Red for advance info */
+        display: block;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+
+    /* --- Row Editing --- */
+    tr.editing td {
+      padding: 2px;
+      background-color: #fffde7;
+    }
+    tr.editing input[type="text"],
+    tr.editing input[type="number"],
+    tr.editing input[type="date"],
+    tr.editing select,
+    tr.editing textarea {
+      padding: 6px 8px;
+      font-size: 13px;
+      margin: 0;
+      border-radius: 2px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
+     tr.editing input:focus, tr.editing select:focus, tr.editing textarea:focus {
+         border-color: #2196F3;
+         outline: none;
+     }
+    tr.editing button {
+      padding: 4px 8px;
+      font-size: 12px;
+      margin: 1px;
+    }
+     .save-btn { background-color: #4CAF50; }
+     .save-btn:hover { background-color: #43A047; }
+     .cancel-btn { background-color: #f44336; }
+     .cancel-btn:hover { background-color: #d32f2f; }
+     .edit-btn { background-color: #FFC107; color: #333; }
+     .edit-btn:hover { background-color: #FFA000; }
+     .delete-btn { background-color: #F44336; }
+     .delete-btn:hover { background-color: #D32F32; }
+
+    /* --- Print styles --- */
+    @media print {
+      body {
+        padding-top: 0;
+        padding-bottom: 0;
+        background-color: #fff !important;
+        color: #000 !important;
+        font-size: 10pt;
+      }
+      header, footer#footer, #sidebar, #overlay, #profile-buttons-container, #login-page, .no-print, #login-footer,
+      #company-profile-section, #contractor-profile-section, #order-entry-section, #pay-amount-section, #change-password-section,
+      #pdf-options-modal, #db-error-banner, #material-return-section
+       {
+        display: none !important;
+      }
+      main {
+        margin-top: 0 !important;
+        padding: 5px;
+      }
+      section, .orders-container, #payment-detail-section {
+        box-shadow: none !important;
+        border: none !important;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #fff !important;
+        display: block !important;
+        page-break-inside: avoid;
+      }
+      .print-only-content {
+        display: block !important;
+      }
+      body > *:not(.print-only-content) {
+        display: none;
+      }
+      table {
+        min-width: 100%;
+        box-shadow: none;
+        border: 1px solid #000 !important;
+        font-size: 9pt;
+        table-layout: auto;
+        width: 100%;
+        page-break-inside: auto;
+      }
+      th, td {
+        padding: 4px;
+        font-size: 8pt;
+        border: 1px solid #ccc !important;
+        word-wrap: break-word;
+        overflow: visible;
+      }
+      th {
+        background-color: #eee !important;
+        color: #000 !important;
+        font-weight: bold;
+      }
+      tbody tr {
+         page-break-inside: avoid;
+      }
+      tfoot {
+          display: table-footer-group; /* Ensure footer prints */
+      }
+      .print-hidden {
+        display: none !important;
+      }
+      th.print-hidden, td.print-hidden {
+        display: none !important;
+      }
+      .stock-issue-container {
+        page-break-inside: avoid;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin-top: 15px;
+      }
+      .stock-issue-container > div {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin: 5px;
+        min-width: 160px;
+      }
+      .stock-issue-container > div > h4 { font-size: 10pt; margin: 0 0 5px 0; }
+      .stock-issue-container table { width: 100%; min-width: auto; font-size: 8pt; margin: 0; border: none !important; }
+      .stock-issue-container th, .stock-issue-container td { padding: 2px; font-size: 7pt; border: 1px solid #eee !important; }
+      .address-details { font-size: 8pt; margin-top: 15px; white-space: pre-line !important; }
+      #payment-detail-section h2,
+      #payment-detail-section h3:not(.payment-report-header),
+      #payment-detail-section p, #payment-detail-section span {
+        font-size: 10pt !important;
+      }
+      .payment-report-header {
+         font-size: 11pt !important;
+      }
+      #payment-history-table, #advance-history-table { font-size: 9pt; }
+      #payment-history-table th, #payment-history-table td,
+      #advance-history-table th, #advance-history-table td { padding: 3px; font-size: 8pt; }
+      a { text-decoration: none; color: #000 !important; }
+      .profile-info {
+        font-size: 10pt;
+        background-color: #fff !important;
+        display: flex !important;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding: 5px;
+        border: 1px solid #eee;
+      }
+      .profile-info span, .profile-info span span { font-size: 9pt !important; }
+      #company-order-header h2, #contractor-order-header h2#contractor-title { font-size: 16pt; margin-bottom: 5px; }
+      #company-order-header h3, #contractor-order-header h3#contractor-subtitle { font-size: 12pt; margin-top: 5px; margin-bottom: 15px; }
+      #payment-detail-section { page-break-before: always; }
+      .payment-report-block { margin-bottom: 15px; padding: 10px; border: 1px solid #eee; }
+      .payment-report-block p { margin: 5px 0; font-size: 10pt; }
+      #payment-history, #advance-history { margin-bottom: 15px; }
+      .balance-sheet-grid { grid-template-columns: 1fr 1fr; }
+      .balance-sheet-card, .balance-sheet-final-summary { box-shadow: none; border: 1px solid #eee; }
+    }
+
+    /* --- Responsive adjustments (General) --- */
+    @media (max-width: 768px) {
+      body { padding-top: 60px; padding-bottom: 40px; }
+      header h1 { font-size: 16px; }
+      #sidebar-toggle { font-size: 20px; padding: 0 5px; }
+      main { padding: 10px; margin-top: 120px; }
+      section { padding: 15px; }
+      .profile-info { font-size: 12px; gap: 10px; }
+      th, td { padding: 8px; font-size: 12px; }
+      button { padding: 8px 15px; font-size: 14px; }
+      .btn-group.no-print button { padding: 6px 12px; font-size: 12px; }
+      .fixed-btn { padding: 6px 10px; font-size: 12px; }
+      #company-profile-buttons button, #contractor-buttons-container button { padding: 5px 10px; font-size: 11px; }
+      
+      .stock-issue-container > div {
+        min-width: 180px;
+      }
+      .stock-issue-container > div > h4 { font-size: 12px; }
+      .stock-issue-container table { min-width: auto; }
+      .stock-issue-container th, .stock-issue-container td { padding: 4px; font-size: 10px; }
+
+      .address-details { font-size: 9px; }
+      #payment-detail-section h2 { font-size: 18px; }
+      #payment-detail-section h3 { font-size: 14px; }
+      #payment-detail-section p { font-size: 12px; }
+      #payment-history-table th, #payment-history-table td,
+      #advance-history-table th, #advance-history-table td { font-size: 11px; padding: 5px; }
+      #pay-amount-section h2 { font-size: 16px; }
+      #pay-amount-section input, #pay-amount-section select { font-size: 14px; }
+      #pay-amount-section button { font-size: 14px; padding: 8px 16px; }
+      .display-info p { font-size: 14px; }
+      table { min-width: 400px; }
+    }
+    /* Utility Classes */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <img id="logo" src="https://raw.githubusercontent.com/aatekaansari/Mhcarpat/main/logo.png" alt="Logo">
+    <h1 id="main-header-title" ondblclick="editTitle(this, 'main_header_title')">MH Qadri Export Rugs</h1>
+    <button id="sidebar-toggle">☰</button>
+  </header>
+  
+  <div id="db-error-banner">
+    <strong>Error:</strong> Could not initialize local database. Offline mode is disabled. Please try using a normal browser window (not private/incognito) and ensure you are not opening the file directly.
+  </div>
+
+
+  <div id="sidebar">
+    <button onclick="setLogoFromUrl()">Set Logo URL</button>
+    <button onclick="triggerElementEdit('main-header-title', 'main_header_title')">Edit App Main Title</button>
+    <button onclick="triggerElementEditFirstOfClass('.js-app-address-display', 'app_address_details_text')">Edit Address/Proprietor</button>
+    <button id="change-password-btn">Change Password</button>
+    <button id="logout-btn">Logout</button>
+    <button id="backup-data-btn" onclick="backupData()">Backup Data</button>
+    <button onclick="document.getElementById('restore-file').click()">Restore Data</button>
+    <input type="file" id="restore-file" accept=".json" style="display: none;" onchange="restoreBackup(this)">
+    <div class="sidebar-spacer"></div>
+    <button id="close-sidebar-btn" onclick="closeSidebar()">Back</button>
+  </div>
+
+  <div id="overlay" onclick="closeSidebar()"></div>
+
+  <div id="login-page" style="display: flex;">
+    <div class="login-container">
+      <div class="login-box">
+        <h2>Login</h2>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="user-email">User Email</label>
+            <input type="email" id="user-email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 0;">
+            <input type="checkbox" id="remember-me" style="width: auto; margin: 0 10px 0 0;">
+            <label for="remember-me" style="margin-bottom: 0; font-weight: normal;">मुझे याद रखें</label>
+          </div>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+      <div class="description-box">
+        <div id="description">
+          <p>MH Kadari Export Rags is a leading manufacturer and exporter of high-quality carpets, Dari, and handmade Turkish knot carpets. We offer premium designs, vibrant color combinations, and various sizes to suit any space. With a commitment to quality and craftsmanship, we provide durable, elegant, and competitively priced flooring solutions. Choose us for style, quality, and excellence!</p>
+        </div>
+      </div>
+    </div>
+    <footer id="login-footer">
+      <p>MH Qadri Export Rugs © 2023</p>
+    </footer>
+  </div>
+
+  <div id="profile-buttons-container" style="display: none;">
+    <div id="profile-action-buttons">
+      <button id="company-fixed-btn" class="fixed-btn" onclick="showCompanyProfileSection()">Add Company</button>
+      <button id="contractor-fixed-btn" class="fixed-btn" onclick="showContractorProfileSection()">Add Contractor</button>
+    </div>
+    <div id="company-profile-buttons"></div>
+    <div id="contractor-buttons-container"></div>
+  </div>
+
+  <main id="main-content" style="display: none;">
+    <!-- Change Password Section -->
+    <section id="change-password-section">
+      <h2>Change Password</h2>
+      <form id="change-password-form" class="vertical-form">
+        <div class="form-group">
+          <label for="current-password">Current Password</label>
+          <input type="password" id="current-password" required>
+        </div>
+        <div class="form-group">
+          <label for="new-password">New Password</label>
+          <input type="password" id="new-password" required minlength="6">
+        </div>
+        <div class="btn-group">
+          <button type="submit">Change Password</button>
+          <button type="button" onclick="cancelChangePassword()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Company Profile Section -->
+    <section id="company-profile-section">
+      <h2>Company Profile</h2>
+      <form id="company-profile-form" class="vertical-form">
+        <div class="form-group">
+          <label for="company-name-input">Name*</label>
+          <input type="text" id="company-name-input" required>
+        </div>
+        <div class="form-group">
+          <label for="company-mobile-input">Mobile</label>
+          <input type="tel" id="company-mobile-input">
+        </div>
+        <div class="form-group">
+          <label for="company-address-input">Address</label>
+          <input type="text" id="company-address-input">
+        </div>
+        <div class="btn-group">
+          <button type="button" onclick="saveCompanyProfile()">Save Company Profile</button>
+          <button type="button" onclick="hideAllSectionsAndShowOutput()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Contractor Profile Section -->
+    <section id="contractor-profile-section">
+      <h2>Contractor Profile</h2>
+      <form id="contractor-profile-form" class="vertical-form">
+        <div class="form-group">
+          <label for="contractor-name-input">Name*</label>
+          <input type="text" id="contractor-name-input" required>
+        </div>
+        <div class="form-group">
+          <label for="contractor-mobile-input">Mobile</label>
+          <input type="tel" id="contractor-mobile-input">
+        </div>
+        <div class="form-group">
+          <label for="contractor-address-input">Address</label>
+          <input type="text" id="contractor-address-input">
+        </div>
+        <div class="btn-group">
+          <button type="button" onclick="saveContractorProfile()">Save Contractor Profile</button>
+          <button type="button" onclick="hideAllSectionsAndShowOutput()">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Order Entry Section -->
+    <section id="order-entry-section">
+      <h2><span id="current-order-type-label"></span> Entry Form</h2>
+      <form id="order-entry-form" class="vertical-form">
+        <input type="hidden" id="is-return-input" name="isReturn" value="false">
+        <div class="form-group" id="company-select-group" style="display: none;">
+          <label id="company-select-label" for="company-select-input">Select Company*</label>
+          <select id="company-select-input" name="company-select" required></select>
+        </div>
+        <div class="form-group">
+          <label id="date-label" for="order-date-input">Date*</label>
+          <input type="date" id="order-date-input" name="date" required>
+        </div>
+        <div class="form-group">
+          <label id="size-label" for="order-size-input">Size (e.g., 9×12)*</label>
+          <input type="text" id="order-size-input" name="size" required pattern="^[\d.\s]+([×x*])[\d.\s]+$" title="Use format W×H e.g., 9×12 or 2.6×9">
+        </div>
+        <div class="form-group">
+          <label id="peace-label" for="order-peace-input">Peace</label>
+          <input type="number" id="order-peace-input" name="peace" step="any">
+        </div>
+        <div class="form-group">
+          <label id="kati-label" for="order-kati-input">Kati</label>
+          <input type="number" id="order-kati-input" name="kati" step="any">
+        </div>
+        <div class="form-group" id="tana-group">
+          <label id="tana-label" for="order-tana-input">Tana</label>
+          <input type="number" id="order-tana-input" name="tana" step="any">
+        </div>
+        <div class="form-group">
+          <label id="rate-label" for="order-rate-input">Rate</label>
+          <input type="number" id="order-rate-input" name="rate" step="any">
+        </div>
+        <div class="form-group">
+          <label for="order-cmsn-rate-input">Cmsn Rate</label>
+          <input type="number" id="order-cmsn-rate-input" name="cmsnRate" step="any" placeholder="e.g. 2, 5.5">
+        </div>
+        <div class="form-group" id="description-group">
+          <label id="description-label" for="order-description-input">Description</label>
+          <input type="text" id="order-description-input" name="description">
+        </div>
+        <div id="additional-fields"></div>
+        <div class="btn-group">
+          <button type="submit">Submit Entry</button>
+          <button type="button" onclick="cancelToOrders()">Cancel</button>
+        </div>
+      </form>
+    </section>
+    
+    <!-- Material Return Section -->
+    <section id="material-return-section">
+        <h2>Material Jama for <span id="material-return-profile-name"></span></h2>
+        <div class="display-info" id="material-balance-summary">
+            <p>All Received Material: <span id="mat-received">0</span></p>
+            <p>All Delivered Material: <span id="mat-delivered">0</span></p>
+            <p><b>All Balance Material: <span id="mat-balance">0</span></b></p>
+        </div>
+        
+        <form id="material-return-form" class="vertical-form">
+            <div class="form-group">
+                <label for="material-return-date">Date*</label>
+                <input type="date" id="material-return-date" required>
+            </div>
+            <div class="form-group">
+                <label for="material-return-tana">Tana Jama</label>
+                <input type="number" id="material-return-tana" step="any">
+            </div>
+            <div class="form-group">
+                <label for="material-return-kati">Kati Jama</label>
+                <input type="number" id="material-return-kati" step="any">
+            </div>
+            <div class="btn-group">
+                <button type="button" onclick="handleMaterialReturnSubmit()">Submit</button>
+                <button type="button" onclick="cancelToOrders()">Cancel</button>
+            </div>
+        </form>
+        
+        <h3 style="margin-top: 30px;">Material Jama History</h3>
+        <div class="table-container">
+            <table id="material-return-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Tana Jama</th>
+                        <th>Kati Jama</th>
+                        <th class="print-hidden">Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Order Output Section (Container for Company/Contractor Views) -->
+    <section id="order-output-section" style="display: block;">
+      <!-- Company Orders View -->
+      <div id="company-orders-container" class="orders-container hidden">
+        <div id="company-order-header">
+          <h2 id="company-main-title" ondblclick="editTitle(this, 'company_order_header_title')">MH Qadri Export Rugs</h2>
+          <h3 id="contractor-subtitle-company" class="contractor-subtitle-display" ondblclick="editTitle(this, 'company_view_subtitle')">Mirzapur</h3>
+          <div class="profile-info" id="company-profile-info"></div>
+          <h3>Company Orders</h3>
+          <div class="btn-group no-print">
+            <button class="add-entry-btn" onclick="showAddOrderSection('company', false)">Order Entry</button>
+            <button class="add-return-btn" onclick="showAddOrderSection('company', true)">Carpet Bajar</button>
+            <button class="material-return-btn" onclick="showMaterialReturnSection('company')">Material Jama</button>
+            <button class="pay-amount-btn" onclick="showPayAmountSection('company', 'binai')">Pay Binai</button>
+            <button class="pay-commission-btn" onclick="showPayAmountSection('company', 'commission')">Pay Commission</button>
+            <button class="view-payment-details-btn" onclick="showPaymentDetailSection('company')">View Payment Details</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('company', false))">Order PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('company', true))">Bajar PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => prepareAllReportPdfContent('company'))">All Report</button>
+          </div>
+        </div>
+        <h3>Order Issue</h3>
+        <div class="table-container">
+          <table id="company-order-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+        </div>
+        <div id="company-return-section" style="display: none;">
+          <h3>Carpet Bajar Report</h3>
+          <div class="table-container">
+            <table id="company-return-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+          </div>
+        </div>
+        <div class="stock-issue-container">
+          <div>
+            <h4>Received Order</h4>
+            <table id="company-received-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-received-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-received-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="company-received-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-received-finalgaj">0.00</td></tr>
+                <tr><td>Total Binai</td><td id="company-received-total-binai">₹ 0</td></tr>
+                <tr><td>Total Commission</td><td id="company-received-cmsn">₹ 0</td></tr>
+                <tr><td>Final Binai Amount</td><td id="company-received-binai">₹ 0</td></tr>
+               </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Order Deliver</h4>
+            <table id="company-deliver-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-deliver-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-deliver-peace">0</td></tr>
+                <tr><td>Carpet Weight</td><td id="company-deliver-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-deliver-finalgaj">0.00</td></tr>
+                <tr><td>Balance Commission</td><td id="company-deliver-cmsn">₹ 0</td></tr>
+                <tr><td>Balance Binai</td><td id="company-deliver-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Balance Order</h4>
+            <table id="company-balance-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="company-balance-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="company-balance-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="company-balance-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="company-balance-finalgaj">0.00</td></tr>
+                <tr><td>Total Binai</td><td id="company-balance-total-binai">₹ 0</td></tr>
+                <tr><td>Total Commission</td><td id="company-balance-cmsn">₹ 0</td></tr>
+                <tr><td>Final Binai Amount</td><td id="company-balance-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+          Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+        </div>
+      </div>
+
+      <!-- Contractor Orders View -->
+      <div id="contractor-orders-container" class="orders-container hidden">
+        <div id="contractor-order-header">
+          <h2 id="contractor-title" ondblclick="editTitle(this, 'contractor_order_header_title')">MH Qadri Export Rugs</h2>
+          <h3 id="contractor-subtitle" ondblclick="editTitle(this, 'contractor_view_subtitle')">Mirzapur</h3>
+          <div class="profile-info" id="contractor-profile-info"></div>
+          <h3>Contractor Orders</h3>
+          <div class="btn-group no-print">
+            <button class="add-entry-btn" onclick="showAddOrderSection('contractor', false)">Order Entry</button>
+            <button class="add-return-btn" onclick="showAddOrderSection('contractor', true)">Carpet Bajar</button>
+            <button class="material-return-btn" onclick="showMaterialReturnSection('contractor')">Material Jama</button>
+            <button class="pay-amount-btn" onclick="showPayAmountSection('contractor', 'binai')">Pay Binai</button>
+            <button class="pay-commission-btn" onclick="showPayAmountSection('contractor', 'commission')">Pay Commission</button>
+            <button class="view-payment-details-btn" onclick="showPaymentDetailSection('contractor')">View Payment Details</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('contractor', false))">Order PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => preparePdfContent('contractor', true))">Bajar PDF</button>
+            <button class="pdf-download-btn" onclick="openPdfOptionsModal(() => prepareAllReportPdfContent('contractor'))">All Report</button>
+          </div>
+        </div>
+        <h3>Order Issue</h3>
+        <div class="table-container">
+          <table id="contractor-order-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+        </div>
+        <div id="contractor-return-section" style="display: none;">
+          <h3>Carpet Bajar Report</h3>
+          <div class="table-container">
+            <table id="contractor-return-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+          </div>
+        </div>
+        <div class="stock-issue-container">
+          <div>
+            <h4>Received Order</h4>
+            <table id="contractor-received-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-received-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-received-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="contractor-received-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-received-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="contractor-received-cmsn">₹ 0</td></tr>
+                <tr><td>Final Binai Amount</td><td id="contractor-received-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="contractor-received-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Order Deliver</h4>
+            <table id="contractor-deliver-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-deliver-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-deliver-peace">0</td></tr>
+                <tr><td>Carpet Weight</td><td id="contractor-deliver-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-deliver-finalgaj">0.00</td></tr>
+                <tr><td>Balance Commission</td><td id="contractor-deliver-cmsn">₹ 0</td></tr>
+                <tr><td>Balance Binai</td><td id="contractor-deliver-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div>
+            <h4>Balance Order</h4>
+            <table id="contractor-balance-table">
+              <thead><tr><th>Size</th><th>Peace</th></tr></thead>
+              <tbody id="contractor-balance-list"></tbody>
+              <tfoot>
+                <tr><td>Total Peace</td><td id="contractor-balance-peace">0</td></tr>
+                <tr><td>Total Material</td><td id="contractor-balance-material">0</td></tr>
+                <tr><td>Final Gaj</td><td id="contractor-balance-finalgaj">0.00</td></tr>
+                <tr><td>Total Commission</td><td id="contractor-balance-cmsn">₹ 0</td></tr>
+                <tr><td>Final Binai Amount</td><td id="contractor-balance-binai">₹ 0</td></tr>
+                <tr><td>Total Binai</td><td id="contractor-balance-total-binai">₹ 0</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+          Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+        </div>
+      </div>
+    </section>
+
+    <!-- Pay Amount Section -->
+    <section id="pay-amount-section">
+        <h2>Pay <span id="payment-type-label">Amount</span> to <span id="pay-to-name"></span></h2>
+        <div id="pay-amount-summary" class="display-info">
+            <p>
+              <b>Total Outstanding <span class="outstanding-label">Commission</span>:</b> 
+              <span id="pay-total-outstanding-amount">₹ 0</span>
+              <button type="button" class="auto-fill-btn" id="fill-outstanding-btn" title="Fill full amount">Pay Full</button>
+            </p>
+            <p id="advance-info-para" style="display:none;">
+                <span class="advance-info" id="advance-info-span"></span>
+            </p>
+        </div>
+        <form id="pay-amount-form" class="vertical-form">
+            <div class="form-group">
+                <label for="pay-date-input">Date*</label>
+                <input type="date" id="pay-date-input" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="pay-mode-select">Payment Mode*</label>
+                <select id="pay-mode-select" name="payment-mode" required>
+                    <option value="">Select Payment Mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="upi">UPI</option>
+                    <option value="bank-transfer">Bank Transfer</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pay-amount-input">Amount to Pay (₹)</label>
+                <input type="number" id="pay-amount-input" name="amount" step="any" min="0" placeholder="Enter amount to pay">
+            </div>
+            <div class="btn-group">
+                <button type="button" onclick="handlePaymentSubmit(event)">Submit Payment</button>
+                <button type="button" onclick="cancelToOrders()">Cancel</button>
+            </div>
+        </form>
+    </section>
+    
+    <!-- Payment Detail Section -->
+    <section id="payment-detail-section">
+      <h2 id="payment-detail-main-title" ondblclick="editTitle(this, 'payment_detail_header_title')">MH Qadri Export Rugs</h2>
+      <h3>Payment Details for <span id="payment-detail-name"></span></h3>
+
+      <!-- Balance Sheet Summary -->
+      <div id="balance-sheet-summary-container">
+          <h3 class="payment-report-header">Balance Sheet</h3>
+          <div class="balance-sheet-grid">
+              <div class="balance-sheet-card">
+                  <h4>Order Summary</h4>
+                  <p>Total Received (Value): <span id="bs-received-value"></span></p>
+                  <p>Total Delivered (Value): <span id="bs-delivered-value"></span></p>
+                  <p>Balance Stock (Value): <span id="bs-balance-value"></span></p>
+              </div>
+              <div class="balance-sheet-card">
+                  <h4>Payment Summary</h4>
+                  <p>Total Binai Paid: <span id="bs-binai-paid"></span></p>
+                  <p>Total Commission Paid: <span id="bs-commission-paid"></span></p>
+                  <p>Advance Settled: <span id="bs-advance-settled"></span></p>
+              </div>
+          </div>
+          <div class="balance-sheet-final-summary">
+              <h4>Final Account Status</h4>
+              <p id="bs-final-balance"></p>
+          </div>
+      </div>
+
+      <!-- All Account Summary Report -->
+      <div class="payment-report-block" style="background-color: #f3e5f5; border-color: #ce93d8; margin-top: 30px;">
+        <h3 class="payment-report-header" style="color: #7b1fa2; border-color: #7b1fa2;">All Account Summary Report</h3>
+        <p>All Received Amount: <span id="summary-all-received">₹ 0</span></p>
+        <p>All Paid Amount: <span id="summary-all-paid">₹ 0</span></p>
+        <p><b>All Balance Amount: <span id="summary-all-balance">₹ 0</span></b></p>
+      </div>
+      
+      <!-- Binai/Commission Payment History -->
+      <div id="payment-history" class="payment-report-block">
+        <h3 class="payment-report-header">Binai & Commission Payment History</h3>
+        <div class="table-container">
+          <table id="payment-history-table">
+            <thead><tr><th>Date</th><th>Amount</th><th>Type</th><th>Payment Mode</th><th class="print-hidden">Actions</th></tr></thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+      </div>
+      <div id="grand-total-bin-comm-block" class="grand-total-block">
+          <p>Total Paid (Including Settled): <span id="grand-total-binai-commission">₹ 0</span></p>
+      </div>
+      
+      <!-- Advance Payment History -->
+      <div id="advance-history" class="payment-report-block">
+        <h3 class="payment-report-header" style="color:#00796B; border-color:#00796B;">Advance (पेशगी) History</h3>
+        <div class="table-container">
+          <table id="advance-history-table">
+            <thead><tr><th>Date</th><th>Amount</th><th>Payment Mode</th><th>Description</th><th class="print-hidden">Actions</th></tr></thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="btn-group no-print">
+        <button type="button" class="add-entry-btn" onclick="addAdvance()">Add Advance (पेशगी दें)</button>
+        <button type="button" class="settle-advance-btn" onclick="settleAdvance()">Advance Settle करें</button>
+        <button type="button" onclick="cancelToOrders()">Back</button>
+        <button class="pdf-download-btn" onclick="openPdfOptionsModal(preparePaymentDetailPdfContent)">Payment PDF</button>
+      </div>
+      <div class="address-details js-app-address-display" ondblclick="editTitle(this, 'app_address_details_text')">
+        Address Chhota Mirzapur Mirzapur Uttar Pradesh pin code 231001 Mobile 998445058 Proprietor Mohd Hasan Ansari
+      </div>
+    </section>
+
+  </main>
+
+  <footer id="footer" style="display: none;">
+    <p>MH Qadri Export Rugs © 2023</p>
+  </footer>
+  
+  <div id="pdf-options-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h2>Export Options</h2>
+      <div class="modal-buttons">
+        <button id="modal-share-btn">Share</button>
+        <button id="modal-print-btn">Print</button>
+        <button id="modal-download-btn">Download</button>
+      </div>
+      <button id="modal-close-btn" class="modal-close">Close</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <script>
+    // === FIREBASE INITIALIZATION START ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdAlfWpiN9Zv3d2UT67wAMfmmQk0E3c6M",
+      authDomain: "mhqadri-cfad0.firebaseapp.com",
+      databaseURL: "https://mhqadri-cfad0-default-rtdb.firebaseio.com",
+      projectId: "mhqadri-cfad0",
+      storageBucket: "mhqadri-cfad0.firebasestorage.app",
+      messagingSenderId: "857314603733",
+      appId: "1:857314603733:web:a619f1de37702e9785285c"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+    // NOTE: Firebase's default behavior provides offline capabilities.
+    // Manual calls to goOffline() and goOnline() have been removed to let
+    // Firebase handle the connection state automatically, which is more robust.
+    // === FIREBASE INITIALIZATION END ===
+
+    let companyProfiles = {}, contractorProfiles = {};
+    let companyOrders = {}, contractorOrders = {};
+    let companyPayments = {}, contractorPayments = {};
+    let appSettings = {};
+    let currentOrderType = "company";
+    let selectedCompanyProfile = null, selectedContractorProfile = null;
+    let currentPdfContentGenerator = null;
+    let currentUser = null;
+    let currentPaymentType = 'binai';
+    const DEFAULT_ADDRESS_DETAILS = "Address: Chhota Mirzapur, Mirzapur, Uttar Pradesh, PIN: 231001\nMobile: 998445058\nProprietor: Mohd Hasan Ansari";
+    
+    let inactivityTimer;
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    document.addEventListener("DOMContentLoaded", function() {
+      
+      const savedEmail = localStorage.getItem('savedUserEmail');
+      if (savedEmail) {
+        document.getElementById('user-email').value = savedEmail;
+        document.getElementById('remember-me').checked = true;
+      }
+      
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          showMainContent();
+        } else {
+          currentUser = null;
+          showLoginPage();
+        }
+      });
+
+      document.getElementById('login-form')?.addEventListener('submit', handleLoginSubmit);
+      document.getElementById('change-password-form')?.addEventListener('submit', handleChangePasswordSubmit);
+      document.getElementById('order-entry-form')?.addEventListener('submit', handleOrderSubmit);
+      
+      // Add event listener for entry form navigation
+      document.getElementById('order-entry-form').addEventListener('keydown', handleFormNavigation);
+      
+      document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
+      document.getElementById('overlay')?.addEventListener('click', closeSidebar);
+      document.getElementById('change-password-btn')?.addEventListener('click', showChangePasswordSection);
+      document.getElementById('logout-btn')?.addEventListener('click', logout);
+      
+      document.getElementById('modal-close-btn').addEventListener('click', closePdfOptionsModal);
+      document.getElementById('modal-download-btn').addEventListener('click', handlePdfDownload);
+      document.getElementById('modal-print-btn').addEventListener('click', handlePdfPrint);
+      document.getElementById('modal-share-btn').addEventListener('click', handlePdfShare);
+
+      window.addEventListener('resize', updateLayout);
+    });
+    
+    // NEW FUNCTION: Handles moving to the next field and scrolling on 'Enter' key press
+    function handleFormNavigation(event) {
+        // We only want to handle the 'Enter' key
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        // Prevent the default behavior of 'Enter' (like submitting the form)
+        event.preventDefault();
+
+        const form = event.target.form;
+        // Get all focusable elements within the form that are currently visible
+        const focusableElements = Array.from(
+            form.querySelectorAll('input, select, textarea')
+        ).filter(
+            // An element is visible if its offsetParent is not null
+            el => !el.disabled && el.offsetParent !== null
+        );
+
+        const currentIndex = focusableElements.indexOf(event.target);
+        const nextIndex = currentIndex + 1;
+
+        // If there is a next element, focus it
+        if (nextIndex < focusableElements.length) {
+            const nextElement = focusableElements[nextIndex];
+            nextElement.focus();
+            // Scroll the newly focused element into the center of the view
+            setTimeout(() => { // Using a short timeout to ensure focus is set before scrolling
+                nextElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }, 100);
+        } else {
+            // If it's the last element, focus the submit button
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.focus();
+                 submitButton.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    }
+
+
+    function logoutDueToInactivity() {
+        if (currentUser) { 
+            alert("आपको निष्क्रियता के कारण लॉग आउट कर दिया गया है।"); 
+            logout();
+        }
+    }
+
+    function resetInactivityTimer() {
+        if (currentUser) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(logoutDueToInactivity, INACTIVITY_TIMEOUT);
+        }
+    }
+
+    function loadInitialData() {
+        console.log("Firebase से रियल-टाइम डेटा लोड हो रहा है...");
+        document.body.style.cursor = 'wait';
+
+        const dataRefs = {
+            companyProfiles: database.ref('companyProfiles'),
+            contractorProfiles: database.ref('contractorProfiles'),
+            companyOrders: database.ref('companyOrders'),
+            contractorOrders: database.ref('contractorOrders'),
+            companyPayments: database.ref('companyPayments'),
+            contractorPayments: database.ref('contractorPayments'),
+            settings: database.ref('settings')
+        };
+        
+        dataRefs.companyProfiles.on('value', snapshot => {
+            companyProfiles = snapshot.val() || {};
+            updateProfileButtons();
+            if (selectedCompanyProfile) {
+                const key = selectedCompanyProfile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                if (companyProfiles[key]) {
+                    selectedCompanyProfile = companyProfiles[key];
+                    updateProfileDisplay();
+                } else {
+                    hideAllSectionsAndShowOutput();
+                }
+            }
+        });
+        
+        dataRefs.contractorProfiles.on('value', snapshot => {
+            contractorProfiles = snapshot.val() || {};
+            updateProfileButtons();
+            if (selectedContractorProfile) {
+                const key = selectedContractorProfile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                if (contractorProfiles[key]) {
+                    selectedContractorProfile = contractorProfiles[key];
+                    updateProfileDisplay();
+                } else {
+                    hideAllSectionsAndShowOutput();
+                }
+            }
+        });
+
+        dataRefs.companyOrders.on('value', snapshot => {
+            companyOrders = snapshot.val() || {};
+            if (selectedCompanyProfile) {
+                if (!document.getElementById('company-orders-container').classList.contains('hidden')) {
+                    updateCompanyOrdersTable();
+                    updateCompanyStock();
+                }
+                if (document.getElementById('material-return-section').style.display === 'block' && currentOrderType === 'company') {
+                    showMaterialReturnSection('company');
+                }
+            }
+        });
+
+        dataRefs.contractorOrders.on('value', snapshot => {
+            contractorOrders = snapshot.val() || {};
+            if (selectedContractorProfile) {
+                 if (!document.getElementById('contractor-orders-container').classList.contains('hidden')) {
+                    updateContractorOrdersTable();
+                    updateContractorStock();
+                }
+                if (document.getElementById('material-return-section').style.display === 'block' && currentOrderType === 'contractor') {
+                    showMaterialReturnSection('contractor');
+                }
+            }
+        });
+
+        dataRefs.companyPayments.on('value', snapshot => {
+            companyPayments = snapshot.val() || {};
+            if (selectedCompanyProfile) {
+                 if (!document.getElementById('company-orders-container').classList.contains('hidden')) {
+                    updateCompanyStock();
+                }
+                if (document.getElementById('payment-detail-section').style.display === 'block' && currentOrderType === 'company') {
+                    showPaymentDetailSection('company');
+                }
+            }
+        });
+
+        dataRefs.contractorPayments.on('value', snapshot => {
+            contractorPayments = snapshot.val() || {};
+             if (selectedContractorProfile) {
+                 if (!document.getElementById('contractor-orders-container').classList.contains('hidden')) {
+                    updateContractorStock();
+                }
+                if (document.getElementById('payment-detail-section').style.display === 'block' && currentOrderType === 'contractor') {
+                    showPaymentDetailSection('contractor');
+                }
+            }
+        });
+        
+        dataRefs.settings.on('value', snapshot => {
+            appSettings = snapshot.val() || {};
+            updateAppSettingsUI();
+        });
+
+        setTimeout(() => {
+            document.body.style.cursor = 'default';
+            updateLayout();
+        }, 2000); 
+    }
+
+
+    async function handleLoginSubmit(event) {
+        event.preventDefault();
+        const email = document.getElementById('user-email').value.trim();
+        const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('remember-me').checked;
+
+        if (!email || !password) {
+            alert("कृपया यूजर ईमेल और पासवर्ड दोनों दर्ज करें।");
+            return;
+        }
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            console.log("Login successful");
+            
+            if (rememberMe) {
+                localStorage.setItem('savedUserEmail', email);
+            } else {
+                localStorage.removeItem('savedUserEmail');
+            }
+            
+        } catch (error) {
+            alert(`लॉगिन विफल: ${error.message}`);
+            console.error('Login error:', error);
+        }
+    }
+
+    async function handleChangePasswordSubmit(event) {
+        event.preventDefault();
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+
+        if (!currentPassword || !newPassword) {
+            alert("Please fill all password fields."); return;
+        }
+        if (newPassword.length < 6) {
+            alert("New password must be at least 6 characters long."); return;
+        }
+        if (newPassword === currentPassword) {
+            alert("New password cannot be the same as the current password."); return;
+        }
+        
+        if (!currentUser) {
+            alert("No user is logged in. Please log in again.");
+            logout(); return;
+        }
+
+        try {
+            const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPassword);
+            await currentUser.reauthenticateWithCredential(credential);
+            await currentUser.updatePassword(newPassword);
+            
+            alert('Password changed successfully.');
+            document.getElementById('change-password-form').reset();
+            hideAllSectionsAndShowOutput();
+        } catch (error) {
+            alert(`Error changing password: ${error.message}`);
+            console.error('Change password error:', error);
+        }
+    }
+
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+          auth.signOut();
+          companyProfiles = {}; contractorProfiles = {}; companyOrders = {}; contractorOrders = {};
+          companyPayments = {}; contractorPayments = {}; appSettings = {};
+          selectedCompanyProfile = null; selectedContractorProfile = null;
+          closeSidebar();
+      }
+    }
+
+    function saveCompanyProfile() {
+      const nameInput = document.getElementById('company-name-input');
+      const name = nameInput.value.trim();
+      const mobile = document.getElementById('company-mobile-input').value.trim();
+      const address = document.getElementById('company-address-input').value.trim();
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+
+      if (!name) { alert("Company name is required."); nameInput.focus(); return; }
+      if (Object.values(companyProfiles).some(p => p.name.toLowerCase() === name.toLowerCase())) {
+          alert(`Company "${name}" already exists.`); nameInput.focus(); return;
+      }
+
+      const profileData = { name, mobile, address, advance: 0, additional_columns: [] }; 
+      
+      try {
+        database.ref(`companyProfiles/${key}`).set(profileData);
+        alert(`कंपनी प्रोफ़ाइल "${name}" सफलतापूर्वक सहेज ली गई है।`);
+        hideAllSectionsAndShowOutput(); 
+      } catch (error) {
+        alert(`कंपनी प्रोफ़ाइल सहेजने में विफल: ${error.message}`);
+      }
+    }
+
+    function saveContractorProfile() {
+      const nameInput = document.getElementById('contractor-name-input');
+      const name = nameInput.value.trim();
+      const mobile = document.getElementById('contractor-mobile-input').value.trim();
+      const address = document.getElementById('contractor-address-input').value.trim();
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+
+      if (!name) { alert("Contractor name is required."); nameInput.focus(); return; }
+      if (Object.values(contractorProfiles).some(p => p.name.toLowerCase() === name.toLowerCase())) {
+          alert(`Contractor "${name}" already exists.`); nameInput.focus(); return;
+      }
+
+      const profileData = { name, mobile, address, advance: 0, additional_columns: [] };
+      
+      try {
+        database.ref(`contractorProfiles/${key}`).set(profileData);
+        alert(`कॉन्ट्रैक्टर प्रोफ़ाइल "${name}" सफलतापूर्वक सहेज ली गई है।`);
+        hideAllSectionsAndShowOutput(); 
+      } catch (error) {
+        alert(`कॉन्ट्रैक्टर प्रोफ़ाइल सहेजने में विफल: ${error.message}`);
+      }
+    }
+    
+    function updateProfileButtons() {
+        const compContainer = document.getElementById('company-profile-buttons');
+        const contrContainer = document.getElementById('contractor-buttons-container');
+        if (!compContainer || !contrContainer) return;
+
+        compContainer.innerHTML = ""; 
+        contrContainer.innerHTML = ""; 
+
+        const sortedCompanies = Object.values(companyProfiles).sort((a, b) => a.name.localeCompare(b.name));
+        const sortedContractors = Object.values(contractorProfiles).sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedCompanies.forEach(profile => {
+            const btn = document.createElement("button");
+            btn.textContent = profile.name;
+            btn.title = `Mobile: ${profile.mobile || 'N/A'}\nAddress: ${profile.address || 'N/A'}`;
+            btn.onclick = () => selectCompanyProfile(profile);
+            btn.ondblclick = (e) => { 
+              e.stopPropagation();
+              if (confirm(`Delete company "${profile.name}"?\nThis will permanently remove the profile and all associated orders/payments.\nThis action cannot be undone.`)) {
+                deleteProfile('company', profile.name);
+              }
+            };
+            compContainer.appendChild(btn);
+        });
+
+        sortedContractors.forEach(profile => {
+            const btn = document.createElement("button");
+            btn.textContent = profile.name;
+            btn.title = `Mobile: ${profile.mobile || 'N/A'}\nAddress: ${profile.address || 'N/A'}`;
+            btn.onclick = () => selectContractorProfile(profile);
+            btn.ondblclick = (e) => { 
+              e.stopPropagation();
+              if (confirm(`Delete contractor "${profile.name}"?\nThis will permanently remove the profile and all associated orders/payments.\nThis action cannot be undone.`)) {
+                deleteProfile('contractor', profile.name);
+              }
+            };
+            contrContainer.appendChild(btn);
+        });
+
+       highlightSelectedButton('company-profile-buttons', selectedCompanyProfile?.name);
+        highlightSelectedButton('contractor-buttons-container', selectedContractorProfile?.name);
+
+        updateLayout(); 
+    }
+
+    function deleteProfile(type, name) {
+      const key = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      
+      try {
+        const updates = {};
+        updates[`/${type}Profiles/${key}`] = null;
+        updates[`/${type}Orders/${key}`] = null;
+        updates[`/${type}Payments/${key}`] = null;
+        
+        database.ref().update(updates);
+        
+        alert(`${ucfirst(type)} profile "${name}" and all related data deleted successfully.`);
+        hideAllSectionsAndShowOutput();
+      } catch (error) {
+        alert(`Failed to delete profile: ${error.message}`);
+      }
+    }
+    
+    function calculateOrderFinancials(order) {
+        if (!order || !order.size) { return order; }
+        try {
+            const normalizedSize = order.size.replace(/[×x*]/g, 'x');
+            const sizeParts = normalizedSize.split('x');
+            const widthInches = parseSizeToInches(sizeParts[0].trim());
+            const heightInches = parseSizeToInches(sizeParts[1].trim());
+
+            order.gaj = (widthInches * heightInches) / 1296;
+            const absPeace = Math.abs(order.peace || 0);
+            order.finalGaj = order.gaj * absPeace;
+            order.binaiAmount = Math.round(order.finalGaj * (order.rate || 0));
+            order.cmsnAmount = (order.cmsnRate > 0) ? Math.round(order.finalGaj * order.cmsnRate) : 0;
+
+            if (order.isReturn) {
+                order.finalGaj = -Math.abs(order.finalGaj);
+                order.binaiAmount = -Math.abs(order.binaiAmount);
+            }
+        } catch(e) { console.error("Calculation error in helper:", e); }
+        return order;
+    }
+
+    function handleOrderSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const isReturn = document.getElementById('is-return-input').value === 'true';
+        const profile = currentOrderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+
+        if (!profile) { alert("Error: Profile context lost. Cannot submit."); return; }
+        
+        const newPeace = parseFloat(formData.get('peace')) || 0;
+        const size = formData.get('size')?.trim() || '';
+
+        if (currentOrderType === 'contractor' && !isReturn) {
+            const companyName = formData.get('company-select');
+            if (!companyName) {
+                alert("Please select a company for this contractor order.");
+                return;
+            }
+            const companyKey = Object.keys(companyProfiles).find(k => companyProfiles[k].name === companyName);
+            if (!companyKey) {
+                alert("Selected company profile could not be found.");
+                return;
+            }
+
+            const companySideOrders = companyOrders[companyKey] ? Object.values(companyOrders[companyKey]) : [];
+            const companyTotalForSize = companySideOrders
+                .filter(o => !o.isReturn && o.size === size)
+                .reduce((sum, o) => sum + (o.peace || 0), 0);
+
+            let alreadyAssignedToContractors = 0;
+            Object.values(contractorOrders).forEach(contractorOrderList => {
+                Object.values(contractorOrderList).forEach(order => {
+                    if (order.company === companyName && order.size === size && !order.isReturn) {
+                        alreadyAssignedToContractors += (order.peace || 0);
+                    }
+                });
+            });
+
+            const availableStock = companyTotalForSize - alreadyAssignedToContractors;
+            if (newPeace > availableStock) {
+                alert(`चेतावनी: आप इस कंपनी के लिए उपलब्ध स्टॉक से अधिक ऑर्डर नहीं दे सकते।\n\nसाइज़ "${size}" के लिए उपलब्ध पीस: ${availableStock}`);
+                return;
+            }
+        }
+        
+        if (isReturn) {
+            if (size && newPeace > 0) {
+                const ordersForProfile = (currentOrderType === 'company' ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {};
+                let receivedForSize = 0;
+                let returnedForSize = 0;
+                
+                Object.values(ordersForProfile).forEach(o => {
+                    if (o.size === size) {
+                        if (o.isReturn) {
+                            returnedForSize += Math.abs(o.peace || 0);
+                        } else {
+                            receivedForSize += (o.peace || 0);
+                        }
+                    }
+                });
+                
+                const currentBalanceForSize = receivedForSize - returnedForSize;
+                
+                if (newPeace > currentBalanceForSize) {
+                    alert(`त्रुटि: आप "${size}" साइज़ के लिए बैलेंस से अधिक पीस (${newPeace}) वापस नहीं कर सकते।\nवर्तमान बैलेंस: ${currentBalanceForSize} पीस।`);
+                    return;
+                }
+            }
+        }
+        
+        let orderData = {
+            id: Date.now(), 
+            date: formData.get('date'), size: size,
+            peace: newPeace, kati: parseFloat(formData.get('kati')) || 0,
+            tana: parseFloat(formData.get('tana')) || 0,
+            rate: parseFloat(formData.get('rate')) || 0, 
+            cmsnRate: parseFloat(formData.get('cmsnRate')) || 0, 
+            description: formData.get('description')?.trim() || '',
+            isReturn: isReturn, additional: {}, company: null
+        };
+        
+        if (isReturn) {
+            orderData.peace = -Math.abs(orderData.peace);
+            orderData.kati = -Math.abs(orderData.kati);
+        }
+
+        if (!orderData.date || !orderData.size) { alert("Date and Size are required."); return; }
+        
+        orderData = calculateOrderFinancials(orderData);
+        
+        const additionalCols = profile?.additional_columns || [];
+        additionalCols.forEach(col => { orderData.additional[col] = formData.get(col)?.trim() || ""; });
+        
+        if (currentOrderType === 'contractor' && !isReturn) {
+            orderData.company = formData.get('company-select');
+        }
+        
+        try {
+            const path = `${currentOrderType}Orders/${profileNameKey}/${orderData.id}`;
+            database.ref(path).set(orderData);
+            
+            alert('एंट्री सफलतापूर्वक सहेज ली गई है।');
+            form.reset(); 
+            cancelToOrders();
+        } catch(error) {
+            alert(`एंट्री सहेजने में विफल: ${error.message}`);
+        }
+    }
+    
+    function triggerElementEdit(elementId, settingKey) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            editTitle(element, settingKey);
+        } else {
+            alert(`Element with ID '${elementId}' not found for editing.`);
+        }
+        closeSidebar();
+    }
+
+    function triggerElementEditFirstOfClass(elementClassSelector, settingKey) {
+        const element = document.querySelector(elementClassSelector);
+        if (element) {
+            editTitle(element, settingKey);
+        } else {
+            alert(`Element with class '${elementClassSelector}' not found for editing.`);
+        }
+        closeSidebar();
+    }
+    
+    function showDbError() {
+        document.getElementById('db-error-banner').style.display = 'block';
+        document.querySelectorAll('button').forEach(btn => {
+            btn.disabled = true;
+            btn.title = "Firebase is not available.";
+        });
+        updateLayout();
+    }
+
+    function showLoginPage() {
+      document.getElementById('login-page').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('profile-buttons-container').style.display = 'none';
+      document.getElementById('footer').style.display = 'none';
+      document.getElementById('sidebar-toggle').style.display = 'none';
+      document.getElementById('login-footer').style.display = 'block'; 
+      
+      clearTimeout(inactivityTimer);
+      activityEvents.forEach(event => document.removeEventListener(event, resetInactivityTimer, true));
+
+      updateLayout(); 
+    }
+
+    function showMainContent() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById('profile-buttons-container').style.display = 'flex'; 
+      document.getElementById('footer').style.display = 'flex'; 
+      document.getElementById('sidebar-toggle').style.display = 'block'; 
+      document.getElementById('login-footer').style.display = 'none'; 
+
+      loadInitialData();
+      hideAllSectionsAndShowOutput(); 
+      resetInactivityTimer(); 
+      activityEvents.forEach(event => document.addEventListener(event, resetInactivityTimer, true));
+    }
+
+    function hideAllSections() {
+      const sections = document.querySelectorAll('main section');
+      sections.forEach(section => {
+        if (section.id !== 'order-output-section') {
+          section.style.display = 'none';
+        }
+      });
+       document.getElementById('company-orders-container')?.classList.add('hidden');
+       document.getElementById('contractor-orders-container')?.classList.add('hidden');
+    }
+
+    function hideAllSectionsAndShowOutput() {
+        hideAllSections(); 
+        const outputSection = document.getElementById('order-output-section');
+        if (outputSection) {
+            outputSection.style.display = 'block'; 
+        }
+        selectedCompanyProfile = null;
+        selectedContractorProfile = null;
+        updateProfileDisplay();
+        highlightSelectedButton('company-profile-buttons', null);
+        highlightSelectedButton('contractor-buttons-container', null);
+        updateLayout();
+    }
+
+    function showChangePasswordSection() {
+        hideAllSections();
+        document.getElementById('change-password-section').style.display = 'block';
+        closeSidebar();
+        updateLayout();
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+
+    function updateLayout() {
+        const header = document.querySelector('header');
+        const profileButtonsContainer = document.getElementById('profile-buttons-container');
+        const main = document.querySelector('main');
+        const footer = document.getElementById('footer');
+        const loginFooter = document.getElementById('login-footer');
+        const loginPage = document.getElementById('login-page');
+        const errorBanner = document.getElementById('db-error-banner');
+
+        if (!main || !header) return; 
+
+        let headerHeight = header.offsetHeight;
+        if(errorBanner && errorBanner.style.display !== 'none'){
+            errorBanner.style.top = header.offsetHeight + 'px';
+        }
+
+        let totalTopOffset = header.offsetHeight;
+        if(errorBanner && errorBanner.style.display !== 'none'){
+            totalTopOffset += errorBanner.offsetHeight;
+        }
+
+        const footerHeight = (footer && footer.style.display !== 'none') ? footer.offsetHeight : 0;
+        const loginFooterHeight = (loginFooter && loginFooter.style.display !== 'none') ? loginFooter.offsetHeight : 0;
+        
+        if (loginPage && loginPage.style.display === 'flex') {
+            document.body.style.paddingTop = header.offsetHeight + 'px';
+            document.body.style.paddingBottom = loginFooterHeight + 'px';
+            main.style.marginTop = '0'; 
+        } else if (main.style.display !== 'none') {
+            if (profileButtonsContainer && profileButtonsContainer.style.display !== 'none') {
+                profileButtonsContainer.style.top = totalTopOffset + 'px'; 
+                main.style.marginTop = (totalTopOffset + profileButtonsContainer.offsetHeight + 10) + 'px';
+            } else {
+                main.style.marginTop = (totalTopOffset + 10) + 'px'; 
+            }
+            document.body.style.paddingTop = '0'; 
+            document.body.style.paddingBottom = footerHeight + 'px'; 
+        } else {
+            document.body.style.paddingTop = header.offsetHeight + 'px';
+            document.body.style.paddingBottom = footerHeight + 'px';
+            main.style.marginTop = (header.offsetHeight + 10) + 'px';
+        }
+    }
+    
+    function cancelChangePassword() {
+      document.getElementById('change-password-form').reset();
+      hideAllSectionsAndShowOutput(); 
+    }
+
+    function showCompanyProfileSection() {
+      hideAllSections();
+      document.getElementById('company-profile-section').style.display = 'block';
+      document.getElementById('company-profile-form').reset();
+      document.getElementById('company-name-input').focus();
+      updateLayout();
+    }
+
+    function showContractorProfileSection() {
+      hideAllSections();
+      document.getElementById('contractor-profile-section').style.display = 'block';
+      document.getElementById('contractor-profile-form').reset();
+      document.getElementById('contractor-name-input').focus();
+      updateLayout();
+    }
+
+    function selectCompanyProfile(profile) {
+        selectedCompanyProfile = profile;
+        selectedContractorProfile = null; 
+        showCompanyOrders(); 
+        highlightSelectedButton('company-profile-buttons', profile.name); 
+        highlightSelectedButton('contractor-buttons-container', null); 
+    }
+
+    function selectContractorProfile(profile) {
+        selectedContractorProfile = profile;
+        selectedCompanyProfile = null; 
+        showContractorOrders(); 
+        highlightSelectedButton('contractor-buttons-container', profile.name); 
+        highlightSelectedButton('company-profile-buttons', null); 
+    }
+
+    function highlightSelectedButton(containerId, selectedName) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const buttons = container.querySelectorAll('button');
+        buttons.forEach(btn => {
+            if (btn.textContent === selectedName) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    function showCompanyOrders() {
+      if (!selectedCompanyProfile) return;
+      hideAllSections(); 
+      const container = document.getElementById('company-orders-container');
+      const mainOutput = document.getElementById('order-output-section');
+       if (!container || !mainOutput) return;
+
+      mainOutput.style.display = 'block'; 
+      document.getElementById('contractor-orders-container').classList.add('hidden');
+      container.classList.remove('hidden'); 
+
+      currentOrderType = 'company'; 
+      updateProfileDisplay(); 
+      updateCompanyOrdersTable(); 
+      updateCompanyStock(); 
+      updateLayout(); 
+    }
+
+    function showContractorOrders() {
+      if (!selectedContractorProfile) return;
+       hideAllSections(); 
+       const container = document.getElementById('contractor-orders-container');
+       const mainOutput = document.getElementById('order-output-section');
+        if (!container || !mainOutput) return;
+
+      mainOutput.style.display = 'block'; 
+      document.getElementById('company-orders-container').classList.add('hidden');
+      container.classList.remove('hidden'); 
+
+      currentOrderType = 'contractor'; 
+      updateProfileDisplay();
+      updateContractorOrdersTable();
+      updateContractorStock();
+      updateLayout();
+    }
+
+    function showAddOrderSection(orderType, isReturn = false) {
+      const profile = orderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+      if (!profile) {
+        alert(`Please select a ${orderType} profile first.`); return;
+      }
+
+      hideAllSections(); 
+      currentOrderType = orderType; 
+
+      const formSection = document.getElementById('order-entry-section');
+      const form = document.getElementById('order-entry-form');
+       if (!formSection || !form) return;
+
+      formSection.style.display = 'block'; 
+      form.reset(); 
+
+      const profileTypeName = ucfirst(orderType);
+      const actionLabel = isReturn ? "Carpet Bajar Entry" : "Order Entry";
+      document.getElementById('current-order-type-label').textContent = `${profileTypeName} (${profile.name}) - ${actionLabel}`;
+      document.getElementById('is-return-input').value = isReturn ? 'true' : 'false';
+
+      document.getElementById('tana-group').style.display = !isReturn ? 'block' : 'none';
+      
+      document.getElementById('kati-label').textContent = isReturn ? "Carpet Weight" : "Kati";
+      document.getElementById('peace-label').textContent = isReturn ? "Return Peace" : "Order Peace";
+      
+      const companySelectGroup = document.getElementById('company-select-group');
+      const companySelectInput = document.getElementById('company-select-input');
+      const isContractorNewOrder = (orderType === 'contractor' && !isReturn);
+      companySelectGroup.style.display = isContractorNewOrder ? 'block' : 'none';
+      companySelectInput.required = isContractorNewOrder;
+      
+      if (isContractorNewOrder) {
+         loadCompanySelect(); 
+      }
+
+      loadAdditionalFields(); 
+
+      document.getElementById('order-date-input').valueAsDate = new Date();
+      document.getElementById('order-date-input').focus();
+      updateLayout();
+    }
+
+    function loadCompanySelect() {
+        const select = document.getElementById('company-select-input');
+        if (!select) return;
+        select.innerHTML = "<option value=''>-- Select Company --</option>";
+        Object.values(companyProfiles).sort((a, b) => a.name.localeCompare(b.name)).forEach(profile => {
+            const option = document.createElement("option");
+            option.value = profile.name;
+            option.textContent = profile.name;
+            select.appendChild(option);
+        });
+    }
+
+    function loadAdditionalFields() {
+        const container = document.getElementById("additional-fields");
+        if (!container) return;
+        container.innerHTML = ""; 
+
+        const profile = currentOrderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const additionalCols = profile?.additional_columns || [];
+
+        additionalCols.forEach(col => {
+            const div = document.createElement("div");
+            div.className = "form-group";
+
+            const label = document.createElement("label");
+            const cleanColName = col.replace(/[^a-zA-Z0-9-_]/g, ''); 
+            label.textContent = col; 
+            label.htmlFor = `additional-${cleanColName}`;
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.name = col; 
+            input.id = `additional-${cleanColName}`;
+            input.placeholder = `Enter ${col}`; 
+
+            div.appendChild(label);
+            div.appendChild(input);
+            container.appendChild(div);
+        });
+    }
+
+    function cancelToOrders() {
+      hideAllSections(); 
+      const outputSection = document.getElementById('order-output-section');
+       if (!outputSection) return;
+       outputSection.style.display = 'block'; 
+
+      if (selectedCompanyProfile) {
+        showCompanyOrders();
+      } else if (selectedContractorProfile) {
+        showContractorOrders();
+      } else {
+        hideAllSectionsAndShowOutput();
+      }
+      updateLayout();
+    }
+
+    function updateProfileDisplay() {
+      const compInfo = document.getElementById('company-profile-info');
+      const contrInfo = document.getElementById('contractor-profile-info');
+      if (!compInfo || !contrInfo) return; 
+
+      const displayProfileInfo = (infoElement, profile) => {
+          if (profile) {
+              let html = `<span>Name: <span>${profile.name}</span></span>`;
+              html += ` <span>Mobile: <span>${profile.mobile || 'N/A'}</span></span>`;
+              html += ` <span>Address: <span>${profile.address || 'N/A'}</span></span>`;
+              if (profile.advance > 0) {
+                  html += ` <span class="advance-info">Advance: <span>${formatBinaiAmount(profile.advance)}</span></span>`;
+              }
+              infoElement.innerHTML = html;
+          } else {
+              infoElement.innerHTML = `<span>Select a profile...</span>`;
+          }
+      };
+
+      displayProfileInfo(compInfo, selectedCompanyProfile);
+      displayProfileInfo(contrInfo, selectedContractorProfile);
+    }
+
+    function updateCompanyOrdersTable() {
+        if (!selectedCompanyProfile) return;
+        const profileName = selectedCompanyProfile.name;
+        const profileNameKey = profileName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersForProfile = companyOrders[profileNameKey] || {};
+        const orders = Object.values(ordersForProfile).sort((a,b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+        const regularOrders = orders.filter(o => !o.isReturn && !o.isMaterialReturn);
+        const returnOrders = orders.filter(o => o.isReturn && !o.isMaterialReturn);
+
+        const regularTable = document.getElementById('company-order-table');
+        const returnTable = document.getElementById('company-return-table');
+        const returnSection = document.getElementById('company-return-section');
+        if (!regularTable || !returnTable || !returnSection) return;
+
+        const baseCols = ["Date", "Size", "Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Binai Amt", "Cmsn Rate", "Cmsn Amt", "Net Binai Amt", "Desc"];
+        const additionalCols = selectedCompanyProfile.additional_columns || []; 
+        
+        const allColsRegular = [...baseCols, ...additionalCols, "Actions"];
+        populateTableHeader(regularTable.querySelector('thead'), allColsRegular, false);
+        populateTableBody(regularTable.querySelector('tbody'), regularOrders, allColsRegular, additionalCols, 'company', false);
+        addTotalsRowToTable(regularTable, regularOrders, allColsRegular, false);
+        
+        const baseColsReturn = baseCols.filter(c => c !== 'TanaOrMJ');
+        const allColsReturn = [...baseColsReturn, ...additionalCols, "Actions"];
+        populateTableHeader(returnTable.querySelector('thead'), allColsReturn, true);
+        populateTableBody(returnTable.querySelector('tbody'), returnOrders, allColsReturn, additionalCols, 'company', true);
+        addTotalsRowToTable(returnTable, returnOrders, allColsReturn, true);
+
+        returnSection.style.display = returnOrders.length > 0 ? 'block' : 'none';
+    }
+
+    function updateContractorOrdersTable() {
+        if (!selectedContractorProfile) return;
+        const profileName = selectedContractorProfile.name;
+        const profileNameKey = profileName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersForProfile = contractorOrders[profileNameKey] || {};
+        const orders = Object.values(ordersForProfile).sort((a,b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+        const regularOrders = orders.filter(o => !o.isReturn && !o.isMaterialReturn);
+        const returnOrders = orders.filter(o => o.isReturn && !o.isMaterialReturn);
+
+        const regularTable = document.getElementById('contractor-order-table');
+        const returnTable = document.getElementById('contractor-return-table');
+        const returnSection = document.getElementById('contractor-return-section');
+        if (!regularTable || !returnTable || !returnSection) return;
+
+        const baseCols = ["Date", "Size", "Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Binai Amt", "Cmsn Rate", "Cmsn Amt", "Net Binai Amt", "Desc", "Company"];
+        const additionalCols = selectedContractorProfile.additional_columns || [];
+        
+        const allColsRegular = [...baseCols, ...additionalCols, "Actions"];
+        populateTableHeader(regularTable.querySelector('thead'), allColsRegular, false); 
+        populateTableBody(regularTable.querySelector('tbody'), regularOrders, allColsRegular, additionalCols, 'contractor', false);
+        addTotalsRowToTable(regularTable, regularOrders, allColsRegular, false);
+        
+        const baseColsReturn = baseCols.filter(c => c !== 'TanaOrMJ');
+        const allColsReturn = [...baseColsReturn, ...additionalCols, "Actions"];
+        populateTableHeader(returnTable.querySelector('thead'), allColsReturn, true); 
+        populateTableBody(returnTable.querySelector('tbody'), returnOrders, allColsReturn, additionalCols, 'contractor', true);
+        addTotalsRowToTable(returnTable, returnOrders, allColsReturn, true);
+
+        returnSection.style.display = returnOrders.length > 0 ? 'block' : 'none';
+    }
+    
+    function addTotalsRowToTable(table, orders, allCols, isReturnTable) {
+        if (!table) return;
+        
+        let tfoot = table.querySelector('tfoot');
+        if (!tfoot) tfoot = table.createTFoot();
+        tfoot.innerHTML = '';
+        
+        if (orders.length === 0) return;
+
+        const totalsRow = tfoot.insertRow();
+        totalsRow.style.fontWeight = 'bold';
+        totalsRow.style.backgroundColor = '#e3f2fd';
+
+        const totals = {};
+        const columnsToSum = ["Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Cmsn Amt", "Binai Amt", "Net Binai Amt"];
+        columnsToSum.forEach(col => totals[col] = 0);
+
+        orders.forEach(order => {
+            totals["Peace"] += Math.abs(order.peace || 0);
+            totals["Final Gaj"] += Math.abs(order.finalGaj || 0);
+            totals["Cmsn Amt"] += order.cmsnAmount || 0;
+            totals["Binai Amt"] += Math.abs(order.binaiAmount || 0);
+            totals["Net Binai Amt"] += (Math.abs(order.binaiAmount || 0) - (order.cmsnAmount || 0));
+            
+            if (isReturnTable) {
+                totals["KatiOrWt"] += Math.abs(order.kati || 0);
+            } else {
+                totals["KatiOrWt"] += order.kati || 0;
+                totals["TanaOrMJ"] += order.tana || 0;
+            }
+        });
+
+        allCols.forEach(colKey => {
+            const cell = totalsRow.insertCell();
+            if (colKey === "Date") {
+                cell.textContent = "Total";
+            } else if (columnsToSum.includes(colKey)) {
+                let value = totals[colKey];
+                if (colKey.includes("Amt") || colKey.includes("Binai")) {
+                    cell.textContent = formatBinaiAmount(value);
+                } else {
+                    cell.textContent = formatNumber(value);
+                }
+                cell.style.textAlign = "right";
+            }
+             if (colKey === "Actions") cell.classList.add("print-hidden");
+        });
+    }
+
+    function populateTableHeader(thead, allCols, isReturnTable) {
+      if (!thead) return;
+      thead.innerHTML = ''; 
+      const headerRow = thead.insertRow();
+      allCols.forEach(colKey => {
+        let colText = colKey;
+        if (colKey === "KatiOrWt") colText = isReturnTable ? "Weight" : "Kati";
+        if (colKey === "Net Binai Amt") colText = "Net Binai";
+        
+        const th = document.createElement("th");
+        th.textContent = colText;
+        th.dataset.columnName = colKey; 
+        if (colKey === "Actions") th.classList.add("print-hidden"); 
+        headerRow.appendChild(th);
+      });
+    }
+
+    function populateTableBody(tbody, orders, allCols, additionalCols, type, isReturnTable) {
+        if (!tbody) return;
+        tbody.innerHTML = ''; 
+
+        if (!orders || orders.length === 0) {
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = allCols.length; 
+            cell.textContent = 'No entries found.';
+            cell.style.textAlign = 'center';
+            return;
+        }
+
+        orders.forEach(order => {
+            const row = tbody.insertRow();
+            row.dataset.id = order.id; 
+            row.dataset.isReturn = order.isReturn || false;
+
+            const rowDataMap = new Map(); 
+
+            rowDataMap.set("Date", formatDateForDisplay(order.date));
+            rowDataMap.set("Size", order.size || 'N/A');
+            rowDataMap.set("Gaj", formatNumber(order.gaj)); 
+            rowDataMap.set("Peace", formatNumber(Math.abs(order.peace))); 
+            rowDataMap.set("Final Gaj", formatNumber(Math.abs(order.finalGaj))); 
+            rowDataMap.set("Rate", formatNumber(order.rate));
+            rowDataMap.set("Binai Amt", formatBinaiAmount(Math.abs(order.binaiAmount))); 
+            rowDataMap.set("Cmsn Rate", formatNumber(order.cmsnRate));
+            rowDataMap.set("Cmsn Amt", formatBinaiAmount(order.cmsnAmount)); 
+            rowDataMap.set("Net Binai Amt", formatBinaiAmount(Math.abs(order.binaiAmount) - (order.cmsnAmount || 0)));
+            rowDataMap.set("Desc", order.description || '');
+            
+            if (isReturnTable) { 
+                rowDataMap.set("KatiOrWt", formatNumber(Math.abs(order.kati)));          
+            } else {
+                rowDataMap.set("KatiOrWt", formatNumber(order.kati));          
+                rowDataMap.set("TanaOrMJ", formatNumber(order.tana));          
+            }
+
+            if (type === 'contractor') rowDataMap.set("Company", order.company || ''); 
+
+            additionalCols.forEach(col => rowDataMap.set(col, order.additional?.[col] || ""));
+
+            allCols.forEach(colKey => { 
+                const cell = row.insertCell();
+                cell.dataset.columnName = colKey; 
+
+                if (colKey === "Actions") {
+                    cell.classList.add("print-hidden"); 
+                    cell.innerHTML = `<button class="edit-btn" onclick="editRow(this.closest('tr'), '${type}')" title="Edit">✏️</button> <button class="delete-btn" onclick="deleteRow(this.closest('tr'), '${type}')" title="Delete">🗑️</button>`;
+                } else {
+                    cell.textContent = rowDataMap.get(colKey) ?? '';
+                    if (["Gaj", "Peace", "Final Gaj", "KatiOrWt", "TanaOrMJ", "Rate", "Cmsn Rate", "Cmsn Amt", "Binai Amt", "Net Binai Amt"].includes(colKey)) {
+                        cell.style.textAlign = "right"; 
+                    }
+                }
+            });
+
+            row.ondblclick = function() {
+                if (!this.classList.contains('editing')) editRow(this, type);
+            };
+        });
+    }
+
+    function editRow(row, type) {
+        if (row.classList.contains('editing')) return;
+        
+        const orderId = row.dataset.id;
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+        const order = ordersObject[profileKey]?.[orderId];
+
+        if (!order) { alert("Error finding order data."); return; }
+
+        row.classList.add('editing');
+        const cells = Array.from(row.cells);
+        const originalHTMLs = cells.map(cell => cell.innerHTML);
+        row.dataset.originalHtml = JSON.stringify(originalHTMLs);
+
+        cells.forEach(cell => {
+            const colName = cell.dataset.columnName;
+            switch(colName) {
+                case "Date": cell.innerHTML = `<input type="date" name="date" value="${order.date}">`; break;
+                case "Size": cell.innerHTML = `<input type="text" name="size" value="${order.size}">`; break;
+                case "Peace": cell.innerHTML = `<input type="number" name="peace" step="any" value="${Math.abs(order.peace)}">`; break;
+                case "KatiOrWt": cell.innerHTML = `<input type="number" name="kati" step="any" value="${Math.abs(order.kati)}">`; break;
+                case "TanaOrMJ": if (!order.isReturn) cell.innerHTML = `<input type="number" name="tana" step="any" value="${order.tana}">`; break;
+                case "Rate": cell.innerHTML = `<input type="number" name="rate" step="any" value="${order.rate}">`; break;
+                case "Cmsn Rate": cell.innerHTML = `<input type="number" name="cmsnRate" step="any" value="${order.cmsnRate}">`; break;
+                case "Desc": cell.innerHTML = `<input type="text" name="description" value="${order.description}">`; break;
+                case "Company": if(type === 'contractor' && !order.isReturn) {
+                    let options = Object.values(companyProfiles).map(p => `<option value="${p.name}" ${p.name === order.company ? 'selected' : ''}>${p.name}</option>`).join('');
+                    cell.innerHTML = `<select name="company">${options}</select>`;
+                } break;
+                case "Actions": cell.innerHTML = `<button class="save-btn" onclick="saveRow(this, '${type}')">✔️</button><button class="cancel-btn" onclick="cancelEdit(this, '${type}')">❌</button>`; break;
+            }
+        });
+    }
+
+    function cancelEdit(button, type) {
+        const row = button.closest('tr');
+        const originalHTMLs = JSON.parse(row.dataset.originalHtml);
+        row.classList.remove('editing');
+        row.querySelectorAll('td').forEach((td, index) => {
+            td.innerHTML = originalHTMLs[index];
+        });
+    }
+
+    function saveRow(button, type) {
+        const row = button.closest('tr');
+        const orderId = row.dataset.id;
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+        const order = ordersObject[profileKey]?.[orderId];
+
+        if (!order) { alert("Could not save. Original order data not found."); return; }
+
+        const getVal = (name) => row.querySelector(`[name=${name}]`)?.value;
+
+        let updatedOrder = { ...order };
+        updatedOrder.date = getVal('date');
+        updatedOrder.size = getVal('size');
+        updatedOrder.peace = parseFloat(getVal('peace')) || 0;
+        updatedOrder.kati = parseFloat(getVal('kati')) || 0;
+        if (!order.isReturn) updatedOrder.tana = parseFloat(getVal('tana')) || 0;
+        updatedOrder.rate = parseFloat(getVal('rate')) || 0;
+        updatedOrder.cmsnRate = parseFloat(getVal('cmsnRate')) || 0;
+        updatedOrder.description = getVal('description');
+        if (type === 'contractor' && !order.isReturn) updatedOrder.company = getVal('company');
+        
+        if (order.isReturn) {
+            updatedOrder.peace = -Math.abs(updatedOrder.peace);
+            updatedOrder.kati = -Math.abs(updatedOrder.kati);
+        }
+
+        updatedOrder = calculateOrderFinancials(updatedOrder);
+        
+        try {
+            const path = `${type}Orders/${profileKey}/${orderId}`;
+            database.ref(path).set(updatedOrder);
+            alert('एंट्री सफलतापूर्वक अपडेट हो गई है।');
+            // No need to manually re-render, the .on() listener will handle it.
+        } catch (error) {
+            alert(`एंट्री अपडेट करने में विफल: ${error.message}`);
+        }
+    }
+
+    function deleteRow(row, type) {
+        if (!row) return;
+        const orderId = row.dataset.id; 
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!orderId || !profile) { alert("Cannot delete row: Context missing."); return; }
+        
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        if (confirm(`Are you sure you want to delete this entry?`)) {
+            try {
+                const path = `${type}Orders/${profileNameKey}/${orderId}`;
+                database.ref(path).remove();
+                alert('एंट्री सफलतापूर्वक हटा दी गई है।');
+            } catch (error) {
+                alert(`एंट्री हटाने में विफल: ${error.message}`);
+            }
+        }
+    }
+
+    function updateCompanyStock() {
+      if (!selectedCompanyProfile) return;
+      const profileNameKey = selectedCompanyProfile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const orders = Object.values(companyOrders[profileNameKey] || {});
+      const payments = Object.values(companyPayments[profileNameKey] || {});
+      calculateAndDisplayStock(orders, payments, 'company');
+    }
+
+    function updateContractorStock() {
+      if (!selectedContractorProfile) return;
+      const profileNameKey = selectedContractorProfile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const orders = Object.values(contractorOrders[profileNameKey] || {});
+      const payments = Object.values(contractorPayments[profileNameKey] || {});
+      calculateAndDisplayStock(orders, payments, 'contractor');
+    }
+
+    function calculateAndDisplayStock(orders, payments, type) {
+        const receivedMap = {}, deliverMap = {}; 
+        let totalReceivedP = 0, totalReceivedM = 0, totalReceivedFG = 0, totalReceivedGrossB = 0, totalReceivedCmsn = 0;
+        let totalDeliverP = 0, totalDeliverM = 0, totalDeliverFG = 0, totalDeliverNetB = 0, totalDeliverCmsn = 0; 
+        
+        (orders || []).forEach(o => {
+            const size = o.size || 'N/A';
+            const normalizedSize = size.replace(/\s/g, '').toLowerCase(); 
+            const peace = Number(o.peace) || 0;
+            const kati = Number(o.kati) || 0;
+            const tana = Number(o.tana) || 0;
+            const fg = Number(o.finalGaj) || 0; 
+            const binai = Number(o.binaiAmount) || 0; 
+            const cmsn = Number(o.cmsnAmount) || 0; 
+
+            if (o.isMaterialReturn) {
+                 totalDeliverM += (Number(o.tanaReturned) || 0) + (Number(o.katiReturned) || 0);
+                 return;
+            }
+
+            if (o.isReturn) { 
+                const absP = Math.abs(peace);
+                deliverMap[normalizedSize] = (deliverMap[normalizedSize] || 0) + absP;
+                totalDeliverP += absP;
+                totalDeliverM += Math.abs(kati); 
+                totalDeliverFG += Math.abs(fg);
+                totalDeliverCmsn += cmsn;
+                totalDeliverNetB += (Math.abs(binai) - cmsn); 
+            } else { 
+                receivedMap[normalizedSize] = (receivedMap[normalizedSize] || 0) + peace;
+                totalReceivedP += peace;
+                totalReceivedM += Math.abs(kati) + Math.abs(tana); 
+                totalReceivedFG += Math.abs(fg); 
+                totalReceivedGrossB += Math.abs(binai);
+                totalReceivedCmsn += cmsn;
+            }
+        });
+        
+        const { totalPaid, totalCommissionPaid, totalAdvanceSettled } = calculatePaymentTotals(payments);
+        
+        const totalReceivedNetB = totalReceivedGrossB - totalReceivedCmsn;
+
+        const balanceMap = {}; 
+        new Set([...Object.keys(receivedMap), ...Object.keys(deliverMap)]).forEach(normSize => {
+            const balance = (receivedMap[normSize] || 0) - (deliverMap[normSize] || 0);
+            if (Math.abs(balance) > 0.001) balanceMap[normSize] = balance;
+        });
+        
+        const outstandingCommission = Math.max(0, totalDeliverCmsn - totalCommissionPaid);
+        const outstandingBinai = Math.max(0, totalDeliverNetB - (totalPaid + totalAdvanceSettled));
+        
+        const sizeDisplayMap = orders.reduce((map, o) => {
+           if(o.size) {
+              const mapKey = o.size.replace(/\s/g, '').toLowerCase();
+              if (!map.has(mapKey)) map.set(mapKey, o.size);
+           }
+           return map;
+        }, new Map());
+        
+        populateStockTable(document.getElementById(`${type}-received-list`), receivedMap, sizeDisplayMap);
+        document.getElementById(`${type}-received-peace`).textContent = formatNumber(totalReceivedP);
+        document.getElementById(`${type}-received-material`).textContent = formatNumber(totalReceivedM);
+        document.getElementById(`${type}-received-finalgaj`).textContent = formatNumber(totalReceivedFG);
+        document.getElementById(`${type}-received-cmsn`).textContent = formatBinaiAmount(totalReceivedCmsn);
+        document.getElementById(`${type}-received-binai`).textContent = formatBinaiAmount(totalReceivedNetB);
+        document.getElementById(`${type}-received-total-binai`).textContent = formatBinaiAmount(totalReceivedGrossB);
+
+        populateStockTable(document.getElementById(`${type}-deliver-list`), deliverMap, sizeDisplayMap);
+        document.getElementById(`${type}-deliver-peace`).textContent = formatNumber(totalDeliverP);
+        document.getElementById(`${type}-deliver-material`).textContent = formatNumber(totalDeliverM);
+        document.getElementById(`${type}-deliver-finalgaj`).textContent = formatNumber(totalDeliverFG);
+        document.getElementById(`${type}-deliver-cmsn`).textContent = formatBinaiAmount(outstandingCommission);
+        document.getElementById(`${type}-deliver-binai`).textContent = formatBinaiAmount(outstandingBinai);
+
+        let totalBalanceP = totalReceivedP - totalDeliverP;
+        let totalBalanceM = totalReceivedM - totalDeliverM;
+        let totalBalanceFG = totalReceivedFG - totalDeliverFG;
+        let totalBalanceNetB = totalReceivedNetB - totalDeliverNetB; 
+        let totalBalanceCmsn = totalReceivedCmsn - totalDeliverCmsn;
+        let totalBalanceGrossB = totalReceivedGrossB - (totalDeliverNetB + totalDeliverCmsn);
+
+        populateStockTable(document.getElementById(`${type}-balance-list`), balanceMap, sizeDisplayMap);
+        document.getElementById(`${type}-balance-peace`).textContent = formatNumber(totalBalanceP);
+        document.getElementById(`${type}-balance-material`).textContent = formatNumber(totalBalanceM);
+        document.getElementById(`${type}-balance-finalgaj`).textContent = formatNumber(totalBalanceFG);
+        document.getElementById(`${type}-balance-cmsn`).textContent = formatBinaiAmount(totalBalanceCmsn);
+        document.getElementById(`${type}-balance-binai`).textContent = formatBinaiAmount(totalBalanceNetB);
+        document.getElementById(`${type}-balance-total-binai`).textContent = formatBinaiAmount(totalBalanceGrossB);
+    }
+
+    function populateStockTable(tbody, sizePeaceMap, sizeDisplayMap) {
+      if (!tbody) return;
+      tbody.innerHTML = ""; 
+
+      const sortedNormalizedSizes = Object.keys(sizePeaceMap).sort((normA, normB) => {
+         const displayA = sizeDisplayMap.get(normA) || normA; 
+         const displayB = sizeDisplayMap.get(normB) || normB;
+         const parse = (s) => { 
+            const parts = String(s).trim().split(/[×x]/i);
+            const parsePart = (p) => {
+               if (!p) return NaN; p = p.trim();
+               if (!isNaN(p) && !p.includes('.')) return (parseInt(p, 10) || 0) * 12;
+               if (p.includes('.')) {
+                  const subParts = p.split('.');
+                  const feet = parseInt(subParts[0], 10) || 0; const inches = parseInt(subParts[1], 10) || 0;
+                  if (isNaN(feet) || isNaN(inches) || inches < 0 || inches > 11) return NaN; return (feet * 12) + inches;
+               } return NaN;
+            };
+            const n1 = parsePart(parts[0]); const n2 = parsePart(parts[1]);
+            return [isNaN(n1) ? Infinity : n1, isNaN(n2) ? Infinity : n2, s];
+         };
+         const [a1, a2, aS] = parse(displayA); const [b1, b2, bS] = parse(displayB);
+         if (a1 !== b1) return a1 - b1; if (a2 !== b2) return a2 - b2; return aS.localeCompare(bS);
+      });
+
+      sortedNormalizedSizes.forEach(normSize => {
+          if (Math.abs(sizePeaceMap[normSize]) > 0.001) {
+              const tr = tbody.insertRow();
+              tr.insertCell().textContent = sizeDisplayMap.get(normSize) || normSize;
+              tr.insertCell().textContent = formatNumber(sizePeaceMap[normSize]); 
+          }
+      });
+    }
+
+    function calculatePaymentTotals(payments) {
+        let totalPaid = 0, totalCommissionPaid = 0, totalAdvanceSettled = 0;
+        (Object.values(payments)).forEach(p => {
+            if (p.mode === 'advance_deduction') {
+                totalAdvanceSettled += Number(p.amount) || 0;
+            } else if (p.mode === 'advance_given') {
+            } else {
+                totalPaid += Number(p.amount) || 0;
+                totalCommissionPaid += Number(p.commission_amount) || 0;
+            }
+        });
+        return { totalPaid, totalCommissionPaid, totalAdvanceSettled };
+    }
+    
+    function showPayAmountSection(type, paymentType) {
+        const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) { alert(`Please select a ${type} profile first.`); return; }
+
+        hideAllSections();
+        document.getElementById('pay-amount-section').style.display = 'block';
+        currentOrderType = type;
+        currentPaymentType = paymentType;
+
+        const form = document.getElementById('pay-amount-form');
+        form.reset();
+
+        document.getElementById('pay-to-name').textContent = profile.name;
+        document.getElementById('payment-type-label').textContent = ucfirst(paymentType);
+        document.querySelector('.outstanding-label').textContent = ucfirst(paymentType);
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const orders = Object.values((type === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+        const payments = Object.values((type === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+
+        let totalDeliverCmsnAll = 0, totalDeliverNetBAll = 0;
+        orders.filter(o => o.isReturn).forEach(o => {
+            totalDeliverCmsnAll += o.cmsnAmount || 0;
+            totalDeliverNetBAll += (Math.abs(o.binaiAmount || 0) - (o.cmsnAmount || 0));
+        });
+
+        const { totalPaid, totalCommissionPaid, totalAdvanceSettled } = calculatePaymentTotals(payments);
+        
+        let outstandingAmount = 0;
+        if (paymentType === 'binai') {
+            outstandingAmount = Math.max(0, totalDeliverNetBAll - (totalPaid + totalAdvanceSettled));
+        } else {
+            outstandingAmount = Math.max(0, totalDeliverCmsnAll - totalCommissionPaid);
+        }
+        
+        const advanceAmount = profile.advance || 0;
+        const advanceInfoPara = document.getElementById('advance-info-para');
+        const advanceInfoSpan = document.getElementById('advance-info-span');
+
+        if (advanceAmount > 0 && paymentType === 'binai') {
+            const payableBeforeAdvance = outstandingAmount - advanceAmount;
+            advanceInfoSpan.textContent = `इस क्लाइंट का ${formatBinaiAmount(advanceAmount)} का एडवांस बाकी है। अधिकतम देय राशि: ${formatBinaiAmount(Math.max(0, payableBeforeAdvance))}`;
+            advanceInfoPara.style.display = 'block';
+
+            if (outstandingAmount <= advanceAmount) {
+                alert(`ध्यान दें: इस क्लाइंट का ${formatBinaiAmount(advanceAmount)} का एडवांस बाकी है।\n\nकुल बकाया राशि (${formatBinaiAmount(outstandingAmount)}) एडवांस राशि से कम या बराबर है।\n\nअब आपको "View Payment Details" में जाकर एडवांस राशि को सेटल करना चाहिए।`);
+            }
+        } else {
+             advanceInfoPara.style.display = 'none';
+        }
+        
+        const roundedOutstandingAmount = Math.round(outstandingAmount);
+        document.getElementById('pay-total-outstanding-amount').textContent = formatBinaiAmount(roundedOutstandingAmount);
+        
+        document.getElementById('fill-outstanding-btn').onclick = () => {
+            const amountInput = document.getElementById('pay-amount-input');
+            let fillAmount = roundedOutstandingAmount;
+            if (advanceAmount > 0 && paymentType === 'binai') {
+                fillAmount = Math.max(0, roundedOutstandingAmount - advanceAmount);
+            }
+            amountInput.value = Math.round(fillAmount);
+            amountInput.focus();
+        };
+
+        document.getElementById('pay-date-input').valueAsDate = new Date();
+        document.getElementById('pay-amount-input').focus();
+        updateLayout();
+    }
+    
+    function handlePaymentSubmit(event) {
+        event.preventDefault();
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+
+        const amountToPay = parseFloat(document.getElementById('pay-amount-input').value) || 0;
+        if (amountToPay <= 0) { alert("Payment amount must be positive."); return; }
+
+        const formDate = document.getElementById('pay-date-input').value;
+        const formMode = document.getElementById('pay-mode-select').value;
+        if (!formDate || !formMode) { alert("Date and Payment Mode are required."); return; }
+        
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const orders = Object.values((currentOrderType === 'company' ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+        const payments = Object.values((currentOrderType === 'company' ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+        
+        let totalDeliverCmsnAll = 0, totalDeliverNetBAll = 0;
+        orders.filter(o => o.isReturn).forEach(o => {
+            totalDeliverCmsnAll += o.cmsnAmount || 0;
+            totalDeliverNetBAll += (Math.abs(o.binaiAmount || 0) - (o.cmsnAmount || 0));
+        });
+        const { totalPaid, totalCommissionPaid, totalAdvanceSettled } = calculatePaymentTotals(payments);
+        
+        let outstandingBeforePayment = 0;
+        if (currentPaymentType === 'binai') {
+            outstandingBeforePayment = Math.max(0, totalDeliverNetBAll - (totalPaid + totalAdvanceSettled));
+        } else {
+            outstandingBeforePayment = Math.max(0, totalDeliverCmsnAll - totalCommissionPaid);
+        }
+
+        const advanceAmount = profile.advance || 0;
+        if (advanceAmount > 0 && currentPaymentType === 'binai') {
+            const payableAmountBeforeAdvance = outstandingBeforePayment - advanceAmount;
+            if (amountToPay > payableAmountBeforeAdvance) {
+                alert(`भुगतान राशि एडवांस कटौती सीमा से अधिक है।\n\nअधिकतम देय राशि: ${formatBinaiAmount(Math.max(0, payableAmountBeforeAdvance))}\n\nकृपया पहले एडवांस राशि को एडजस्ट करें।`);
+                return;
+            }
+        } else {
+             if (amountToPay > outstandingBeforePayment) {
+                alert(`भुगतान राशि बकाया राशि (${formatBinaiAmount(outstandingBeforePayment)}) से अधिक नहीं हो सकती।`);
+                return;
+             }
+        }
+
+        const paymentData = { 
+            id: Date.now(), date: formDate, mode: formMode, 
+            amount: currentPaymentType === 'binai' ? amountToPay : 0, 
+            commission_amount: currentPaymentType === 'commission' ? amountToPay : 0
+        };
+
+        try {
+            const path = `${currentOrderType}Payments/${profileNameKey}/${paymentData.id}`;
+            database.ref(path).set(paymentData);
+            alert(`${ucfirst(currentPaymentType)} भुगतान सफलतापूर्वक सहेज लिया गया है।`);
+            cancelToOrders();
+        } catch(error) {
+            alert(`भुगतान सहेजने में विफल: ${error.message}`);
+        }
+    }
+    
+    function showPaymentDetailSection(type) {
+      const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+      if (!profile) { alert(`Please select a profile first.`); return; }
+
+      hideAllSections();
+      document.getElementById('payment-detail-section').style.display = 'block';
+      currentOrderType = type;
+
+      document.getElementById('payment-detail-name').textContent = profile.name;
+
+      const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const orders = Object.values((type === "company" ? companyOrders[profileNameKey] : contractorOrders[profileNameKey]) || {});
+      const payments = Object.values((type === "company" ? companyPayments[profileNameKey] : contractorPayments[profileNameKey]) || {});
+      const sortedPayments = Object.values(payments).sort((a, b) => new Date(b.date) - new Date(a.date) || (b.id - a.id));
+
+      let totalReceivedGrossB = 0, totalDeliverGrossB = 0;
+      orders.forEach(o => {
+        const grossBinai = Math.abs(Number(o.binaiAmount) || 0);
+        if(!o.isMaterialReturn) {
+          if (o.isReturn) { totalDeliverGrossB += grossBinai; } else { totalReceivedGrossB += grossBinai; }
+        }
+      });
+      
+      const { totalPaid, totalCommissionPaid, totalAdvanceSettled } = calculatePaymentTotals(payments);
+      
+      document.getElementById('bs-received-value').textContent = formatBinaiAmount(totalReceivedGrossB);
+      document.getElementById('bs-delivered-value').textContent = formatBinaiAmount(totalDeliverGrossB);
+      document.getElementById('bs-balance-value').textContent = formatBinaiAmount(totalReceivedGrossB - totalDeliverGrossB);
+      document.getElementById('bs-binai-paid').textContent = formatBinaiAmount(totalPaid);
+      document.getElementById('bs-commission-paid').textContent = formatBinaiAmount(totalCommissionPaid);
+      document.getElementById('bs-advance-settled').textContent = formatBinaiAmount(totalAdvanceSettled);
+      
+      const totalPaidAll_bs = totalPaid + totalCommissionPaid + totalAdvanceSettled;
+      const finalBalance_bs = totalReceivedGrossB - totalPaidAll_bs;
+      document.getElementById('bs-final-balance').textContent = `Final Balance: ${formatBinaiAmount(finalBalance_bs)}`;
+      
+      const allPaidAmount = totalPaid + totalCommissionPaid + totalAdvanceSettled;
+      const allBalanceAmount = totalReceivedGrossB - allPaidAmount;
+      document.getElementById('summary-all-received').textContent = formatBinaiAmount(totalReceivedGrossB);
+      document.getElementById('summary-all-paid').textContent = formatBinaiAmount(allPaidAmount);
+      document.getElementById('summary-all-balance').textContent = formatBinaiAmount(allBalanceAmount);
+
+      populatePaymentHistoryTables(sortedPayments, type);
+      updateLayout(); 
+    }
+    
+    function populatePaymentHistoryTables(payments, type) {
+        populateBinaiCommissionTable(payments, type);
+        populateAdvanceHistoryTable(payments, type);
+
+        const { totalPaid, totalCommissionPaid, totalAdvanceSettled } = calculatePaymentTotals(payments);
+        document.getElementById('grand-total-binai-commission').textContent = formatBinaiAmount(totalPaid + totalCommissionPaid + totalAdvanceSettled);
+    }
+    
+    function populateBinaiCommissionTable(payments, type) {
+        const regularPayments = payments.filter(p => p.mode !== 'advance_given');
+        
+        const table = document.getElementById('payment-history-table');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = "";
+        let tfoot = table.querySelector('tfoot');
+        if (tfoot) tfoot.innerHTML = ""; else tfoot = table.createTFoot();
+
+        if (regularPayments.length > 0) {
+            let totalBinai = 0, totalCommission = 0, totalAdvanceSettled = 0;
+            
+            regularPayments.forEach(p => {
+                const tr = tbody.insertRow();
+                tr.dataset.id = p.id;
+                let amount = 0;
+                let paymentType = '';
+
+                if (p.mode === 'advance_deduction') {
+                    amount = p.amount;
+                    paymentType = 'Advance Settled';
+                    totalAdvanceSettled += amount;
+                } else if (p.amount > 0) {
+                    amount = p.amount;
+                    paymentType = 'Binai';
+                    totalBinai += amount;
+                } else if (p.commission_amount > 0) {
+                    amount = p.commission_amount;
+                    paymentType = 'Commission';
+                    totalCommission += amount;
+                }
+                
+                tr.insertCell().textContent = formatDateForDisplay(p.date);
+                tr.insertCell().textContent = formatBinaiAmount(amount);
+                tr.insertCell().textContent = paymentType;
+                tr.insertCell().textContent = p.mode;
+                tr.insertCell().innerHTML = `<button class="delete-btn" onclick="deletePaymentRow(this.closest('tr'), '${type}')" title="Delete">🗑️</button>`;
+                tr.cells[4].classList.add("print-hidden");
+            });
+
+            const footerRow = tfoot.insertRow();
+            footerRow.insertCell().textContent = 'Total';
+            footerRow.insertCell().textContent = formatBinaiAmount(totalBinai + totalCommission + totalAdvanceSettled);
+            footerRow.insertCell();
+            footerRow.insertCell();
+            footerRow.insertCell().classList.add("print-hidden");
+        } else {
+            const tr = tbody.insertRow();
+            const td = tr.insertCell();
+            td.colSpan = 5; td.textContent = "No payment history found."; td.style.textAlign = "center";
+        }
+    }
+
+    function populateAdvanceHistoryTable(payments, type) {
+        const advancePayments = payments.filter(p => p.mode === 'advance_given');
+        
+        const table = document.getElementById('advance-history-table');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = "";
+        let tfoot = table.querySelector('tfoot');
+        if (tfoot) tfoot.innerHTML = ""; else tfoot = table.createTFoot();
+
+        if (advancePayments.length > 0) {
+            let totalAdvance = 0;
+            
+            advancePayments.forEach(p => {
+                const tr = tbody.insertRow();
+                tr.dataset.id = p.id;
+                const amount = p.amount;
+                totalAdvance += amount;
+                
+                tr.insertCell().textContent = formatDateForDisplay(p.date);
+                tr.insertCell().textContent = formatBinaiAmount(amount);
+                tr.insertCell().textContent = 'Advance Given';
+                tr.insertCell().textContent = p.description || '';
+                tr.insertCell().innerHTML = `<button class="delete-btn" onclick="deletePaymentRow(this.closest('tr'), '${type}')" title="Delete">🗑️</button>`;
+                tr.cells[4].classList.add("print-hidden");
+            });
+
+            const footerRow = tfoot.insertRow();
+            footerRow.insertCell().textContent = 'Total Advance';
+            footerRow.insertCell().textContent = formatBinaiAmount(totalAdvance);
+            footerRow.insertCell();
+            footerRow.insertCell();
+            footerRow.insertCell().classList.add("print-hidden");
+        } else {
+            const tr = tbody.insertRow();
+            const td = tr.insertCell();
+            td.colSpan = 5; td.textContent = "No advance history found."; td.style.textAlign = "center";
+        }
+    }
+    
+    function deletePaymentRow(row, type) {
+        const paymentId = row.dataset.id;
+        const profile = (type === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!paymentId || !profile) { alert("Cannot delete row: Context missing."); return; }
+        
+        if (confirm("Are you sure you want to delete this payment entry?")) {
+            const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+            const paymentsObject = type === 'company' ? companyPayments : contractorPayments;
+            const paymentToDelete = paymentsObject[profileNameKey]?.[paymentId];
+            
+            const updates = {};
+            updates[`/${type}Payments/${profileNameKey}/${paymentId}`] = null;
+
+            if (paymentToDelete) {
+                const profilePath = `/${type}Profiles/${profileNameKey}/advance`;
+                const currentAdvance = profile.advance || 0;
+                let newAdvance = currentAdvance;
+
+                if (paymentToDelete.mode === 'advance_deduction') {
+                    newAdvance = currentAdvance + (paymentToDelete.amount || 0);
+                } else if (paymentToDelete.mode === 'advance_given') {
+                    newAdvance = currentAdvance - (paymentToDelete.amount || 0);
+                }
+                
+                if (newAdvance !== currentAdvance) {
+                   updates[profilePath] = newAdvance < 0 ? 0 : newAdvance;
+                }
+            }
+
+            try {
+                database.ref().update(updates);
+                alert('भुगतान सफलतापूर्वक हटा दिया गया है।');
+            } catch (error) {
+                alert(`भुगतान हटाने में विफल: ${error.message}`);
+            }
+        }
+    }
+
+    function addAdvance() {
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+        
+        const amountStr = prompt("Enter advance amount to add (पेशगी राशि जोड़ें):");
+        if (amountStr === null) return;
+
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid positive number for the advance amount.");
+            return;
+        }
+
+        const description = prompt("Enter a description for this advance (इस पेशगी के लिए विवरण दर्ज करें):", "");
+        if (description === null) return;
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        const paymentData = {
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            mode: 'advance_given',
+            amount: amount,
+            commission_amount: 0,
+            description: description,
+        };
+
+        const newAdvanceAmount = (profile.advance || 0) + amount;
+
+        const updates = {};
+        updates[`/${currentOrderType}Profiles/${profileNameKey}/advance`] = newAdvanceAmount;
+        updates[`/${currentOrderType}Payments/${profileNameKey}/${paymentData.id}`] = paymentData;
+
+        try {
+            database.ref().update(updates);
+            alert(`${formatBinaiAmount(amount)} एडवांस सफलतापूर्वक जोड़ दिया गया है।`);
+        } catch (error) {
+            alert(`एडवांस जोड़ने में विफल: ${error.message}`);
+        }
+    }
+
+    function settleAdvance() {
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile || !profile.advance || profile.advance <= 0) {
+            alert("इस क्लाइंट के लिए कोई एडवांस राशि सेटल करने के लिए नहीं है।");
+            return;
+        }
+
+        if (confirm(`क्या आप वाकई ${formatBinaiAmount(profile.advance)} की एडवांस राशि को सेटल करना चाहते हैं?\nयह एक अपरिवर्तनीय कार्रवाई है।`)) {
+            const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+            
+            const paymentData = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                mode: 'advance_deduction',
+                amount: profile.advance,
+                commission_amount: 0
+            };
+
+            const updates = {};
+            updates[`/${currentOrderType}Profiles/${profileNameKey}/advance`] = 0;
+            updates[`/${currentOrderType}Payments/${profileNameKey}/${paymentData.id}`] = paymentData;
+
+            try {
+                database.ref().update(updates);
+                alert("एडवांस राशि सफलतापूर्वक सेटल हो गई है।");
+            } catch (error) {
+                alert(`एडवांस सेटल करने में विफल: ${error.message}`);
+            }
+        }
+    }
+    
+    function showMaterialReturnSection(type) {
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+        
+        currentOrderType = type;
+        hideAllSections();
+        document.getElementById('material-return-section').style.display = 'block';
+        document.getElementById('material-return-profile-name').textContent = profile.name;
+        document.getElementById('material-return-form').reset();
+        document.getElementById('material-return-date').valueAsDate = new Date();
+
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+        const orders = Object.values(ordersObject[profileNameKey] || {});
+        
+        let receivedMaterial = 0;
+        let deliveredMaterial = 0;
+        const materialReturnEntries = [];
+
+        orders.forEach(o => {
+            if (o.isMaterialReturn) {
+                const returnedAmount = (Number(o.tanaReturned) || 0) + (Number(o.katiReturned) || 0);
+                deliveredMaterial += returnedAmount;
+                materialReturnEntries.push(o);
+            } else if (o.isReturn) {
+                deliveredMaterial += Math.abs(Number(o.kati) || 0);
+            } else {
+                receivedMaterial += (Number(o.kati) || 0) + (Number(o.tana) || 0);
+            }
+        });
+
+        document.getElementById('mat-received').textContent = formatNumber(receivedMaterial);
+        document.getElementById('mat-delivered').textContent = formatNumber(deliveredMaterial);
+        document.getElementById('mat-balance').textContent = formatNumber(receivedMaterial - deliveredMaterial);
+        
+        populateMaterialReturnTable(materialReturnEntries.sort((a,b) => new Date(b.date) - new Date(a.date)), type);
+    }
+
+    function populateMaterialReturnTable(entries, type) {
+        const tbody = document.getElementById('material-return-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        if (entries.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No material return entries found.</td></tr>`;
+            return;
+        }
+        entries.forEach(entry => {
+            const row = tbody.insertRow();
+            row.dataset.id = entry.id;
+            row.insertCell().textContent = formatDateForDisplay(entry.date);
+            row.insertCell().textContent = formatNumber(entry.tanaReturned);
+            row.insertCell().textContent = formatNumber(entry.katiReturned);
+            row.insertCell().innerHTML = `<button class="edit-btn" onclick="editMaterialReturnRow(this, '${type}')">✏️</button> <button class="delete-btn" onclick="deleteMaterialReturnRow(this, '${type}')">🗑️</button>`;
+        });
+    }
+
+    function deleteMaterialReturnRow(button, type) {
+        const row = button.closest('tr');
+        const entryId = row.dataset.id;
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        if (confirm("Are you sure you want to delete this material return entry?")) {
+            try {
+                const path = `${type}Orders/${profileKey}/${entryId}`;
+                database.ref(path).remove();
+                alert("एंट्री सफलतापूर्वक हटा दी गई है।");
+            } catch (error) {
+                alert(`हटाने में विफल: ${error.message}`);
+            }
+        }
+    }
+
+    function editMaterialReturnRow(button, type) {
+        const row = button.closest('tr');
+        if(row.classList.contains('editing')) return;
+        row.classList.add('editing');
+
+        const originalDate = row.cells[0].textContent;
+        const originalTana = row.cells[1].textContent;
+        const originalKati = row.cells[2].textContent;
+        
+        row.dataset.originalHtml = row.innerHTML;
+
+        row.cells[0].innerHTML = `<input type="date" value="${formatDateForInput(originalDate)}">`;
+        row.cells[1].innerHTML = `<input type="number" step="any" value="${originalTana}">`;
+        row.cells[2].innerHTML = `<input type="number" step="any" value="${originalKati}">`;
+        row.cells[3].innerHTML = `<button class="save-btn" onclick="saveMaterialReturnRow(this, '${type}')">✔️</button><button class="cancel-btn" onclick="cancelMaterialReturnEdit(this)">❌</button>`;
+    }
+
+    function cancelMaterialReturnEdit(button) {
+        const row = button.closest('tr');
+        row.innerHTML = row.dataset.originalHtml;
+        row.classList.remove('editing');
+    }
+
+    function saveMaterialReturnRow(button, type) {
+        const row = button.closest('tr');
+        const entryId = row.dataset.id;
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        const profileKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersObject = type === 'company' ? companyOrders : contractorOrders;
+
+        const newDate = row.cells[0].querySelector('input').value;
+        const newTana = parseFloat(row.cells[1].querySelector('input').value) || 0;
+        const newKati = parseFloat(row.cells[2].querySelector('input').value) || 0;
+
+        if(!newDate || (newTana <= 0 && newKati <= 0)) {
+            alert("Please provide a valid date and at least one material amount.");
+            return;
+        }
+
+        const entry = ordersObject[profileKey][entryId];
+        entry.date = newDate;
+        entry.tanaReturned = newTana;
+        entry.katiReturned = newKati;
+
+        try {
+            const path = `${type}Orders/${profileKey}/${entryId}`;
+            database.ref(path).set(entry);
+            alert("एंट्री सफलतापूर्वक अपडेट हो गई है।");
+        } catch (error) {
+            alert(`अपडेट करने में विफल: ${error.message}`);
+        }
+    }
+
+    function handleMaterialReturnSubmit() {
+        const profile = currentOrderType === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return;
+
+        const date = document.getElementById('material-return-date').value;
+        const tanaReturned = parseFloat(document.getElementById('material-return-tana').value) || 0;
+        const katiReturned = parseFloat(document.getElementById('material-return-kati').value) || 0;
+
+        if (!date) { alert("Date is required."); return; }
+        if (tanaReturned <= 0 && katiReturned <= 0) { alert("Please enter a value for Tana or Kati."); return; }
+        
+        const profileNameKey = profile.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const ordersObject = currentOrderType === 'company' ? companyOrders : contractorOrders;
+        const orders = Object.values(ordersObject[profileNameKey] || {});
+        let receivedMaterial = 0;
+        let deliveredMaterial = 0;
+
+        orders.forEach(o => {
+            if (o.isMaterialReturn) {
+                deliveredMaterial += (Number(o.tanaReturned) || 0) + (Number(o.katiReturned) || 0);
+            } else if (o.isReturn) {
+                deliveredMaterial += Math.abs(Number(o.kati) || 0);
+            } else {
+                receivedMaterial += (Number(o.kati) || 0) + (Number(o.tana) || 0);
+            }
+        });
+        const currentBalance = receivedMaterial - deliveredMaterial;
+        const newReturnAmount = tanaReturned + katiReturned;
+
+        if (newReturnAmount > currentBalance) {
+            alert(`आप बैलेंस से अधिक मटेरियल जमा नहीं कर सकते।\nवर्तमान बैलेंस: ${formatNumber(currentBalance)}`);
+            return; 
+        }
+
+        const materialReturnData = {
+            id: Date.now(),
+            date: date,
+            isMaterialReturn: true,
+            tanaReturned: tanaReturned,
+            katiReturned: katiReturned,
+            size: '', gaj: 0, peace: 0, finalGaj: 0, kati: 0, tana: 0, rate: 0, binaiAmount: 0, cmsnRate: 0, cmsnAmount: 0, description: 'Material Return', isReturn: false, additional: {}, company: null,
+        };
+        
+        try {
+            const path = `${currentOrderType}Orders/${profileNameKey}/${materialReturnData.id}`;
+            database.ref(path).set(materialReturnData);
+            alert("मटेरियल वापसी सफलतापूर्वक सहेज ली गई है।");
+            cancelToOrders();
+        } catch (error) {
+            alert(`सहेजने में विफल: ${error.message}`);
+        }
+    }
+
+    async function setLogoFromUrl() {
+        const currentUrl = appSettings.logo || '';
+        const newUrl = prompt("Please enter the new logo URL:", currentUrl);
+
+        if (newUrl === null || newUrl.trim() === currentUrl) {
+            closeSidebar();
+            return; 
+        }
+        if (!newUrl.trim()) { alert("URL cannot be empty."); return; }
+        
+        const settingKey = 'logo';
+        const settingValue = newUrl.trim();
+        
+        try {
+            await database.ref(`settings/${settingKey}`).set(settingValue);
+            alert('Logo updated successfully!');
+            closeSidebar();
+        } catch (error) {
+            alert(`Failed to update logo: ${error.message}`);
+        }
+    }
+
+    async function restoreBackup(fileInput) {
+        const file = fileInput.files[0];
+        if (!file || !file.name.toLowerCase().endsWith('.json')) {
+            alert('कृपया एक मान्य JSON बैकअप फ़ाइल चुनें।');
+            fileInput.value = '';
+            return;
+        }
+        if (prompt(`चेतावनी: यह आपके सभी मौजूदा डेटा को इस बैकअप से बदल देगा।\nजारी रखने के लिए 'RESTORE' टाइप करें:`) !== 'RESTORE') {
+            alert('रिस्टोर रद्द कर दिया गया।');
+            fileInput.value = '';
+            return;
+        }
+
+        document.body.style.cursor = 'wait';
+        
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const backupData = JSON.parse(event.target.result);
+                if (!backupData.companyProfiles && !backupData.settings) {
+                    throw new Error("JSON file does not seem to be a valid backup file.");
+                }
+                
+                await database.ref().set(backupData);
+                alert('डेटा सफलतापूर्वक रिस्टोर हो गया! पेज फिर से लोड हो रहा है।');
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Restore failed:', error);
+                alert(`रिस्टोर विफल: ${error.message}`);
+                document.body.style.cursor = 'default';
+            }
+        };
+        reader.onerror = function() {
+            alert("Failed to read the backup file.");
+            document.body.style.cursor = 'default';
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+    }
+
+
+    function backupData() {
+        if (!confirm('Create and download a full data backup file?')) return;
+        document.body.style.cursor = 'wait';
+        try {
+            const dataToBackup = {
+                companyProfiles,
+                contractorProfiles,
+                companyOrders,
+                contractorOrders,
+                companyPayments,
+                contractorPayments,
+                settings: appSettings
+            };
+            const blob = new Blob([JSON.stringify(dataToBackup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mhqadri_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('Backup downloaded successfully.');
+        } catch (error) { 
+            alert(`Backup error: ${error.message}`);
+        } finally {
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    async function editTitle(element, settingKey) {
+        const currentText = element.textContent;
+        const newText = prompt("Enter new text:", currentText);
+        if (newText && newText.trim() !== currentText) {
+            try {
+                await database.ref(`settings/${settingKey}`).set(newText.trim());
+            } catch(error) {
+                alert(`Failed to update setting: ${error.message}`);
+                element.textContent = currentText;
+            }
+        }
+    }
+    
+    function updateAppSettingsUI() {
+        const defaultLogoUrl = 'https://raw.githubusercontent.com/aatekaansari/Mhcarpat/main/logo.png';
+        const logoImg = document.getElementById('logo');
+        if (logoImg) {
+            const finalLogoUrl = appSettings.logo || defaultLogoUrl;
+            logoImg.src = finalLogoUrl;
+            logoImg.style.display = finalLogoUrl ? 'inline' : 'none';
+        }
+        document.getElementById('main-header-title').textContent = appSettings.main_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('company-main-title').textContent = appSettings.company_order_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('contractor-title').textContent = appSettings.contractor_order_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('payment-detail-main-title').textContent = appSettings.payment_detail_header_title || 'MH Qadri Export Rugs';
+        document.getElementById('contractor-subtitle-company').textContent = appSettings.company_view_subtitle || 'Mirzapur';
+        document.getElementById('contractor-subtitle').textContent = appSettings.contractor_view_subtitle || 'Mirzapur';
+        document.querySelectorAll('.js-app-address-display').forEach(el => {
+            el.innerText = appSettings.app_address_details_text || DEFAULT_ADDRESS_DETAILS; 
+        });
+        updateLayout();
+    }
+    
+    function preparePdfContent(type, isReturnReport) {
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+        
+        const containerId = `${type}-orders-container`;
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+        
+        const clone = container.cloneNode(true);
+        clone.style.backgroundColor = '#fff';
+        clone.querySelectorAll('.no-print, tr.editing, .print-hidden').forEach(el => el.remove());
+        
+        const mainTableSelector = isReturnReport ? `#${type}-return-table` : `#${type}-order-table`;
+        const otherTableSelector = isReturnReport ? `#${type}-order-table` : `#${type}-return-table`;
+        
+        clone.querySelector(otherTableSelector)?.closest('.table-container')?.remove();
+        if (isReturnReport) {
+            const headers = clone.querySelectorAll('h3');
+            headers.forEach(h3 => { if(h3.textContent.trim() === 'Order Issue') h3.remove() });
+        } else {
+            clone.querySelector(`[id$="-return-section"]`)?.remove();
+        }
+        clone.querySelector('.stock-issue-container')?.remove();
+
+        const pdfFileName = `${profile.name}_${isReturnReport ? 'Bajar' : 'Orders'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: clone, filename: pdfFileName };
+    }
+
+    function prepareAllReportPdfContent(type) {
+        const profile = type === 'company' ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+
+        const printContainer = document.createElement('div');
+        printContainer.style.backgroundColor = '#fff';
+        printContainer.style.padding = '20px';
+
+        const headerClone = document.getElementById(`${type}-order-header`).cloneNode(true);
+        headerClone.querySelector('.no-print')?.remove();
+        printContainer.appendChild(headerClone);
+
+        const stockClone = document.getElementById(`${type}-orders-container`).querySelector('.stock-issue-container').cloneNode(true);
+        printContainer.appendChild(stockClone);
+        
+        const addressClone = document.getElementById(`${type}-orders-container`).querySelector('.address-details').cloneNode(true);
+        printContainer.appendChild(addressClone);
+        
+        const pdfFileName = `${profile.name}_All_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: printContainer, filename: pdfFileName };
+    }
+
+    function preparePaymentDetailPdfContent() {
+        const profile = (currentOrderType === "company") ? selectedCompanyProfile : selectedContractorProfile;
+        if (!profile) return null;
+        
+        const container = document.getElementById("payment-detail-section");
+        const clone = container.cloneNode(true);
+        clone.style.backgroundColor = '#fff';
+        clone.querySelectorAll('.no-print, .print-hidden').forEach(el => el.remove());
+        
+        const pdfFileName = `${profile.name}_PaymentDetails_${new Date().toISOString().split('T')[0]}.pdf`;
+        return { element: clone, filename: pdfFileName };
+    }
+
+    function openPdfOptionsModal(generatorFunction) {
+        if (typeof generatorFunction !== 'function') {
+            console.error("PDF generator function is not valid.");
+            return;
+        }
+        currentPdfContentGenerator = generatorFunction;
+        
+        const shareBtn = document.getElementById('modal-share-btn');
+        if (navigator.share && navigator.canShare) {
+            shareBtn.disabled = false;
+        } else {
+            shareBtn.disabled = true;
+            shareBtn.title = "Your browser does not support sharing files.";
+        }
+
+        document.getElementById('pdf-options-modal').style.display = 'flex';
+    }
+
+    function closePdfOptionsModal() {
+        document.getElementById('pdf-options-modal').style.display = 'none';
+        currentPdfContentGenerator = null;
+    }
+    
+    async function handlePdfDownload() {
+        if (!currentPdfContentGenerator) return;
+        const content = currentPdfContentGenerator();
+        if (!content) { alert('Failed to generate content.'); return; }
+
+        document.body.style.cursor = 'wait';
+        const opt = { margin: 0.5, filename: content.filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        
+        await html2pdf().from(content.element).set(opt).save();
+        
+        document.body.style.cursor = 'default';
+        closePdfOptionsModal();
+    }
+
+    async function handlePdfShare() {
+        if (!currentPdfContentGenerator) return;
+        const content = currentPdfContentGenerator();
+        if (!content) { alert('Failed to generate content.'); return; }
+        
+        document.body.style.cursor = 'wait';
+        const opt = { margin: 0.5, filename: content.filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        
+        try {
+            const pdfBlob = await html2pdf().from(content.element).set(opt).output('blob');
+            const pdfFile = new File([pdfBlob], content.filename, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                await navigator.share({
+                    files: [pdfFile],
+                    title: content.filename,
+                    text: `Here is the report: ${content.filename}`,
+                });
+            } else {
+                alert('Sharing not supported for this file.');
+            }
+        } catch (error) {
+            console.error('Share failed:', error);
+        } finally {
+            document.body.style.cursor = 'default';
+            closePdfOptionsModal();
+        }
+    }
+    
+    function handlePdfPrint() {
+      if (!currentPdfContentGenerator) return;
+      const content = currentPdfContentGenerator();
+      if (!content) { alert('Failed to generate content.'); return; }
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow.document;
+      iframeDoc.open();
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+      styles.forEach(style => {
+          iframeDoc.head.appendChild(style.cloneNode(true));
+      });
+      iframeDoc.body.innerHTML = content.element.innerHTML;
+      iframeDoc.close();
+
+      iframe.onload = function() {
+          setTimeout(() => { 
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+              document.body.removeChild(iframe);
+          }, 500);
+      };
+
+      closePdfOptionsModal();
+    }
+
+    function formatNumber(x) {
+        const num = Number(x);
+        if (isNaN(num)) return '0';
+        return parseFloat(num.toFixed(2)).toString().replace(/\.00$/, '');
+    }
+    function formatBinaiAmount(x) {
+        const num = Math.round(Number(x) || 0);
+        return `₹ ${num.toLocaleString('en-IN')}`;
+    }
+    function formatDateForDisplay(isoDateString) {
+        if (!isoDateString) return 'N/A';
+        const [y, m, d] = isoDateString.split('-');
+        return `${d}/${m}/${y}`;
+    }
+    function formatDateForInput(displayDate) {
+        if (!displayDate) return '';
+        const [d, m, y] = displayDate.split('/');
+        return `${y}-${m}-${d}`;
+    }
+    function parseSizeToInches(sizeStr) {
+        if (!sizeStr) throw new Error("Size string is empty.");
+        sizeStr = String(sizeStr).trim();
+        if (sizeStr.includes('.')) {
+            const [feet, inches] = sizeStr.split('.').map(s => parseInt(s, 10));
+            if (isNaN(feet) || isNaN(inches) || inches > 11) throw new Error(`Invalid format: "${sizeStr}"`);
+            return (feet * 12) + inches;
+        }
+        return parseInt(sizeStr, 10) * 12;
+    }
+    function ucfirst(string) { return string.charAt(0).toUpperCase() + string.slice(1); }
+  </script>
+  
+</body>
+</html>```
